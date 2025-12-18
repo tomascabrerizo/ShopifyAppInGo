@@ -9,56 +9,21 @@ import (
 	"net/http"
 	"net/http/httputil"
 
-	"database/sql"
-	_ "github.com/mattn/go-sqlite3"
-
+	"tomi/src/database"
 	"tomi/src/shopify"
 )
 
-func dbInit() (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", "./database/sqlite.db")
-	if err != nil {
-		return nil, err
-	}
-	schema, err := os.ReadFile("./database/schema.sql")
-	if err != nil {
-		db.Close()
-		return nil, err
-	}
-	if _, err := db.Exec(string(schema)); err != nil {
-		db.Close()
-		return nil, err
-	}
-	return db, nil
-} 
-
-func dbSaveAccessToken(db *sql.DB, shop, accessToken, scopes string) error {
-	query := `INSERT INTO shops (shop, access_token, scopes) VALUES (?, ?, ?);`
-	_, err := db.Exec(query, shop, accessToken, scopes)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func dbCheckAuth(db *sql.DB, shop string) (string, error) {
-	var token string
-	query := `SELECT access_token FROM shops WHERE shop = ?`
-  err := db.QueryRow(query, shop).Scan(&token)
-  if err != nil {
- 		return "", err
-	}
-	return token, nil
-}
-
 type Application struct {
-	db *sql.DB
+	db *database.Database
 	proxy *httputil.ReverseProxy
 	shopify *shopify.Shopify
 }
 
 func NewAppication() (*Application, error){
-	db, err := dbInit()	
+	db, err := database.NewDatabase(
+		"./database/sqlite.db",
+		"./database/schema.sql",
+	)
 	if(err != nil) {
 		return nil, err
 	}
@@ -69,9 +34,10 @@ func NewAppication() (*Application, error){
 	}
 	proxy := httputil.NewSingleHostReverseProxy(target)
 	
-	clientId := os.Getenv("SHOPIFY_CLIENT_ID")
-	clientSecret := os.Getenv("SHOPIFY_CLIENT_SECRET") 
-	shopify := shopify.NewShop(clientId, clientSecret)
+	shopify := shopify.NewShop(
+		os.Getenv("SHOPIFY_CLIENT_ID"),
+		os.Getenv("SHOPIFY_CLIENT_SECRET"), 
+	)
 	
 	app := &Application{
 		db: db,
@@ -89,7 +55,7 @@ func (app *Application) Shutdown() {
 func (app *Application) MainHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO: Handle oauth redirection correctly only escape if app is embedded
 	shop := r.URL.Query().Get("shop")
-	token, err := dbCheckAuth(app.db, shop)
+	token, err := app.db.GetAccessToken(shop)
 	if err != nil {
 		app.proxy.ServeHTTP(w, r)
 	} else {
@@ -119,8 +85,13 @@ func (app *Application) AuthCallbackHandler(w http.ResponseWriter, r *http.Reque
 		log.Printf("fail to get access token: %s\n", err.Error())
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 	}
-
-	if err := dbSaveAccessToken(app.db, shop, tokenResp.AccessToken, tokenResp.Scope); err != nil {
+	
+	token := database.AccessToken{
+		Shop: shop,
+		Access: tokenResp.AccessToken,
+		Scopes: tokenResp.Scope,
+	}
+	if err := app.db.InsertAccessToken(&token); err != nil {
 		log.Printf("fail to save access token: %s\n", err.Error())
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
