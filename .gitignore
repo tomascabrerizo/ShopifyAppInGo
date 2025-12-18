@@ -1,0 +1,10 @@
+/build
+/package-lock.json
+
+/app_bridge/node_modules
+/app_bridge/package-lock.json
+
+/web/node_modules
+/web/package-lock.json
+
+.env
