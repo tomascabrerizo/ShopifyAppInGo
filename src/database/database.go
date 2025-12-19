@@ -24,7 +24,6 @@ func NewDatabase(dbPath, schemaPath string) (*Database, error) {
 		handle.Close()
 		return nil, err
 	}
-
 	db := &Database{handle: handle}
 	return db, nil
 }

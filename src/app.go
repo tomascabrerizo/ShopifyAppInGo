@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 	"log"
-	"fmt"
 	
 	"net/url"
 	"net/http"
@@ -53,17 +52,22 @@ func (app *Application) Shutdown() {
 }
 
 func (app *Application) MainHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: Handle oauth redirection correctly only escape if app is embedded
-	shop := r.URL.Query().Get("shop")
-	token, err := app.db.GetAccessToken(shop)
-	if err != nil {
-		app.proxy.ServeHTTP(w, r)
-	} else {
-		w.Write([]byte(fmt.Sprintf("shop: %s has token: %s\n", shop, token)))
+	if err := app.shopify.Verify(r); err == nil {
+		_, err := app.db.GetAccessToken(r.URL.Query().Get("shop"))
+		if err != nil {
+			http.ServeFile(w, r, "./app_bridge/dist/index.html")
+			return
+		}
 	}
+	app.proxy.ServeHTTP(w, r)
 }
 
 func (app *Application) AuthHandler(w http.ResponseWriter, r *http.Request) {
+	if err := app.shopify.Verify(r); err != nil {
+		app.proxy.ServeHTTP(w, r)
+		return
+	}
+
 	shop := r.URL.Query().Get("shop")
 	// TODO: Generate random state and save it to a cookie
 	url := app.shopify.OAuthUrl(r.Host, shop, "123")

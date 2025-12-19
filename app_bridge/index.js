@@ -16,9 +16,7 @@ function ExitIFrame() {
 
 function NoIFrameRedirect() {
     const params = new URLSearchParams(window.location.search);
-    const redirectUriParams = new URLSearchParams({
-        shop: params.get("shop"),
-    }).toString();
+    const redirectUriParams = new URLSearchParams(params).toString();
     const redirectUri = `/api/auth?${redirectUriParams}`;
     window.location.href = redirectUri;
 }

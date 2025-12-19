@@ -34,6 +34,9 @@ func main() {
 	}
 	defer app.Shutdown()
 
+	fs := http.FileServer(http.Dir("./app_bridge/dist"))
+	http.Handle("/app_bridge/assets/", http.StripPrefix("/app_bridge/", fs))
+
 	http.HandleFunc("/", app.MainHandler)
 	http.HandleFunc("/api/auth", app.AuthHandler)
 	http.HandleFunc("/api/auth/callback", app.AuthCallbackHandler)
