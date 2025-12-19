@@ -1,4 +1,5 @@
 import createApp from '@shopify/app-bridge';
+import { getSessionToken } from '@shopify/app-bridge/utilities'
 import { Redirect } from '@shopify/app-bridge/actions';
 
 const config = {
