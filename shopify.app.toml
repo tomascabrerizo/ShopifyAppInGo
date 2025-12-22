@@ -2,18 +2,32 @@
 
 client_id = "2298e2e615e8c35791b251ed4504b203"
 name = "tomi"
-application_url = "https://e5366a9312ed.ngrok-free.app"
+application_url = "https://a3cfd55c5626.ngrok-free.app"
 embedded = true
 
 [webhooks]
 api_version = "2026-01"
+
+[[webhooks.subscriptions]]
+topics = ["app/uninstalled"]
+uri = "https://a3cfd55c5626.ngrok-free.app/webhooks/app-uninstalled"
+
+[[webhooks.subscriptions]]
+topics = [
+  "orders/create",
+  "orders/delete",
+  "orders/fulfilled",
+  "orders/paid",
+  "orders/updated",
+]
+uri = "https://a3cfd55c5626.ngrok-free.app/webhooks/orders"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "read_assigned_fulfillment_orders,read_customers,read_inventory,read_locations,read_merchant_managed_fulfillment_orders,read_orders,read_shipping,read_third_party_fulfillment_orders,write_assigned_fulfillment_orders,write_merchant_managed_fulfillment_orders,write_products,write_shipping"
 
 [auth]
-redirect_urls = [ "https://e5366a9312ed.ngrok-free.app/api/auth/callback" ]
+redirect_urls = [ "https://a3cfd55c5626.ngrok-free.app//api/auth/callback" ]
 
 [build]
 automatically_update_urls_on_dev = true

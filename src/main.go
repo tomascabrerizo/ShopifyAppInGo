@@ -92,8 +92,6 @@ func shopifyAuth(next http.Handler) http.Handler {
 		  return
 		}
 
-		fmt.Println("auth reuqest")
-	  
 		next.ServeHTTP(w, r)
 	})
 }
@@ -110,13 +108,8 @@ func main() {
 	}
 	defer app.Shutdown()
 
-	http.Handle("/test", shopifyAuth(
-		http.HandlerFunc(func (w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"ok": true}`))
-		}),
-	))
+	http.HandleFunc("/webhooks/app-uninstalled", app.AppUninstalledWebHook)
+	http.HandleFunc("/webhooks/orders", app.OrdersWebhook)
 
 	fs := http.FileServer(http.Dir("./app_bridge/dist"))
 	http.Handle("/app_bridge/assets/", http.StripPrefix("/app_bridge/", fs))

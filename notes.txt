@@ -1,0 +1,27 @@
+infor needed to generate pre-envio orden on andreani api 
+id,
+origin {
+  address,
+  number,
+  zip,
+},
+destination {
+  address,
+  number,
+  zip,
+},
+items {
+  weight,
+  dim {
+    width,
+    height,
+    length,
+    unit,
+  },
+}
+andreani {
+  contrato
+}
+
+
+
