@@ -5,23 +5,6 @@ CREATE TABLE IF NOT EXISTS shops (
 	installed_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS addresses (
-  address_id INTEGER PRIMARY KEY,
-
-  email TEXT,
-  phone TEXT,
-  name TEXT NOT NULL,
-  last_name TEXT NOT NULL,
-  
-  address1 TEXT NOT NULL,
-  address2 TEXT,
-  "number" INTEGER,
-  city TEXT,
-  zip TEXT NOT NULL,
-  province TEXT,
-  country TEXT
-);
-
 CREATE TABLE IF NOT EXISTS orders (
   order_id INTEGER PRIMARY KEY,
   order_api_id TEXT NOT NULL,
@@ -30,21 +13,40 @@ CREATE TABLE IF NOT EXISTS orders (
 
   currency TEXT NOT NULL,
   subtotal_price INTEGER NOT NULL,
-  shipping_price INTEGER,
-  discount INTEGER,
+  shipping_price INTEGER NOT NULL,
+  discount INTEGER NOT NULL,
   total_price INTEGER NOT NULL,
   
   carrier_name TEXT,
   carrier_code TEXT,
   carrier_price INTEGER,
   
-  shipping_address_id INTEGER NOT NULL,
+  shipping_address_id INTEGER,
 
-	created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-  FOREIGN KEY (shop) REFERENCES shops(shop),
-  FOREIGN KEY (shipping_address_id) REFERENCES addresses(address_id)
+	created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS addresses (
+  address_id INTEGER PRIMARY KEY,
+  order_id INTEGER,
+
+  email TEXT,
+  phone TEXT,
+  name TEXT,
+  last_name TEXT,
+  
+  address1 TEXT,
+  address2 TEXT,
+  "number" INTEGER,
+  city TEXT,
+  zip TEXT,
+  province TEXT,
+  country TEXT,
+
+  UNIQUE(order_id),
+  FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE
+);
+
 
 CREATE TABLE IF NOT EXISTS order_items (
   item_id INTEGER PRIMARY KEY,
@@ -60,8 +62,8 @@ CREATE TABLE IF NOT EXISTS order_items (
   price INTEGER NOT NULL,
 
   product_id INTEGER NOT NULL,
-  variant_id INTEGER NOT NULL,
+  variant_id INTEGER,
   sku TEXT NOT NULL,
 
-  FOREIGN KEY (order_id) REFERENCES orders(order_id)
+  FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE
 );

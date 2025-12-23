@@ -11,9 +11,12 @@ type Database struct {
 	handle *sql.DB
 }
 
-func NewDatabase(dbPath, schemaPath string) (*Database, error) {
-	handle, err := sql.Open("sqlite3", dbPath)
+func NewDatabase(schemaPath string) (*Database, error) {
+	handle, err := sql.Open("sqlite3", "file:./database/sqlite.db?_foreign_keys=on")
 	if err != nil {
+		return nil, err
+	}
+	if err := handle.Ping(); err != nil {
 		return nil, err
 	}
 	schema, err := os.ReadFile(schemaPath)
@@ -62,18 +65,19 @@ func (db *Database) GetAccessToken(shop string) (*AccessToken, error) {
 }
 
 type Address struct {
-	AddressID int64  `json:"address_id"`
-  Email     string `json:"email"`
-  Phone     string `json:"phone"`
-  Name      string `json:"name"`
-  LastName  string `json:"last_name"`
-  Address1  string `json:"address1"`
-  Address2  string `json:"address2"`
-  Number    int    `json:"number"`
-  City      string `json:"city"`
-  Zip       string `json:"zip"`
-  Province  string `json:"province"`
-  Country   string `json:"country"`
+	AddressID int64   `json:"address_id"`
+	OrderID   *int64  `json:"order_id"`
+  Email     *string `json:"email"`
+  Phone     *string `json:"phone"`
+  Name      *string `json:"name"`
+  LastName  *string `json:"last_name"`
+  Address1  *string `json:"address1"`
+  Address2  *string `json:"address2"`
+  Number    *int    `json:"number"`
+  City      *string `json:"city"`
+  Zip       *string `json:"zip"`
+  Province  *string `json:"province"`
+  Country   *string `json:"country"`
 }
 
 type OrderItem struct {
@@ -86,7 +90,7 @@ type OrderItem struct {
 	Currency  string `json:"currency"`
 	Price     int64  `json:"price"`
 	ProductID int64  `json:"product_id"`
-	VariantID int64  `json:"variant_id"`
+	VariantID *int64 `json:"variant_id"`
 	Sku       string `json:"sku"`
 }
 
@@ -99,27 +103,27 @@ type Order struct {
 	ShippingPrice     int64  			`json:"shipping_price"`
 	Discount          int64  			`json:"discount"`
 	TotalPrice        int64  			`json:"total_price"`
-	CarrierName       string 			`json:"carrier_name"`
-	CarrierCode       string 			`json:"carrier_code"`
-	CarrierPrice      int64  			`json:"carrier_price"`
-	ShippingAddressID int64  			`json:"shipping_address_id"`
+	CarrierName       *string 		`json:"carrier_name"`
+	CarrierCode       *string 		`json:"carrier_code"`
+	CarrierPrice      *int64  		`json:"carrier_price"`
 	CreatedAt         time.Time 	`json:"created_at"`
-
-	ShippingAddress   Address   `json:"shipping_address"`
+	
+	ShippingAddress   *Address    `json:"shipping_address"`
 	Items             []OrderItem `json:"items"`
 }
 
 func insertAddressTx(tx *sql.Tx, address *Address) error {
 	query := `
 		INSERT INTO addresses (
-			email, phone, name, last_name, 
+			order_id, email, phone, name, last_name, 
 			address1, address2, "number", 
 			city, zip, province, country
-  	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+  	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 	`
 
 	res, err := tx.Exec(
 		query,
+		address.OrderID,
 		address.Email,
 		address.Phone,
 		address.Name,
@@ -181,18 +185,13 @@ func (db *Database) InsertOrder(order *Order) error {
 		return err
 	}
 	defer tx.Rollback()
-
-	if err := insertAddressTx(tx, &order.ShippingAddress); err != nil {
-		return err
-	}
-
+	
 	query := `
 		INSERT INTO orders (
   	  order_id, order_api_id, shop,
   	  currency, subtotal_price, shipping_price, discount, total_price,
-  	  carrier_name, carrier_code, carrier_price,
-  	  shipping_address_id
-  	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+  	  carrier_name, carrier_code, carrier_price
+  	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 	`
 
 	_, err = tx.Exec(
@@ -208,11 +207,16 @@ func (db *Database) InsertOrder(order *Order) error {
 		order.CarrierName,
 		order.CarrierCode,
 		order.CarrierPrice,
-		order.ShippingAddress.AddressID,
 	)
 
 	if err != nil {
 		return err
+	}
+
+	if order.ShippingAddress != nil {
+		if err := insertAddressTx(tx, order.ShippingAddress); err != nil {
+			return err
+		}
 	}
 
 	for i := 0; i < len(order.Items); i++ {
@@ -225,5 +229,14 @@ func (db *Database) InsertOrder(order *Order) error {
 		return err
 	}
 
+	return nil
+}
+
+func (db *Database) DeleteOrder(orderID int64) error {
+	query := `DELETE FROM orders WHERE order_id = ?;`
+	_, err := db.handle.Exec(query, orderID)
+	if err != nil {
+		return err
+	}
 	return nil
 }

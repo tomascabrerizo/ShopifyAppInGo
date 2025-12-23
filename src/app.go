@@ -19,10 +19,7 @@ type Application struct {
 }
 
 func NewAppication() (*Application, error){
-	db, err := database.NewDatabase(
-		"./database/sqlite.db",
-		"./database/schema.sql",
-	)
+	db, err := database.NewDatabase("./database/schema.sql")
 	if(err != nil) {
 		return nil, err
 	}
