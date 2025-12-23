@@ -21,31 +21,36 @@ func (app *Application) OrdersWebhook(w http.ResponseWriter, r *http.Request) {
 	// TODO: Verify shopify webhook
 
 	topic := r.Header.Get("X-Shopify-Topic")
+	shop := r.Header.Get("X-Shopify-Shop-Domain")
+
+	// TODO: Check to webhook duplication
+	// TODO: Search for a better way to handle webhooks updatetimes
+
 	switch topic {
 		case "orders/create":
 			log.Println("OrdersCreateHandler:")
-			app.OrdersCreateHandler(w, r)
+			app.OrdersCreateHandler(shop, w, r)
 		case "orders/delete":
 			log.Println("OrdersDeleteHandler:")
 			app.OrdersDeleteHandler(w, r)
 		case "orders/updated":
 			log.Println("OrdersUpdatedHandler:")
-			app.OrdersUpdatedHandler(w, r)
+			app.OrdersUpdatedHandler(shop, w, r)
 		case "orders/fulfilled":
 			log.Println("OrdersFulfilledHandler:")
-			app.OrdersFulfilledHandler(w, r)
+			app.OrdersFulfilledHandler(shop, w, r)
 		case "orders/paid":
 			log.Println("OrdersPaidHandler:")
-			app.OrdersPaidHandler(w, r)
+			app.OrdersPaidHandler(shop, w, r)
 		case "orders/cancelled":
 			log.Println("OrdersCanceledHandler:")
-			app.OrdersCanceledHandler(w, r)
+			app.OrdersCanceledHandler(shop, w, r)
 		default:
 			w.WriteHeader(http.StatusNoContent)
 	}
 }
 
-func shopifyToDatabaseOrder(order shopify.Order) database.Order {
+func shopifyToDatabaseOrder(shop string, order shopify.Order) database.Order {
 	
 	subtotalPrice := shopify.GetShopMoney(order.CurrentSubtotalPriceSet)
 	shippingPrice := shopify.GetShopMoney(order.CurrentShippingPriceSet)
@@ -100,7 +105,7 @@ func shopifyToDatabaseOrder(order shopify.Order) database.Order {
 	result := database.Order{
 		OrderID: order.ID,
 		OrderApiID: order.AdminGraphqlApiID,
-		Shop: "halfpipedev.myshopify.com",
+		Shop: shop,
 		Currency: order.Currency,
 		SubtotalPrice: subtotalPrice,
 		ShippingPrice: shippingPrice,
@@ -111,12 +116,13 @@ func shopifyToDatabaseOrder(order shopify.Order) database.Order {
 		CarrierPrice: &carrierPrice,
 		ShippingAddress: address,
 		Items: items,
+		UpdatedAt: order.UpdatedAt,
 	}
 
 	return result
 }
 
-func (app *Application) OrdersCreateHandler(w http.ResponseWriter, r *http.Request) {
+func (app *Application) OrdersCreateHandler(shop string, w http.ResponseWriter, r *http.Request) {
   body, err := io.ReadAll(r.Body)
   if err != nil {
     http.Error(w, "failed to read body", http.StatusBadRequest)
@@ -130,14 +136,15 @@ func (app *Application) OrdersCreateHandler(w http.ResponseWriter, r *http.Reque
     return
 	}
 
-	order := shopifyToDatabaseOrder(payload)
+	order := shopifyToDatabaseOrder(shop, payload)
 	if err := app.db.UpsertOrder(&order); err != nil {
     log.Printf("failed to insert order : %s\n", err)
     http.Error(w, "internal server error", http.StatusInternalServerError)
     return
 	
 	}
-	
+
+	log.Println(order.UpdatedAt)
   w.WriteHeader(http.StatusOK)
 }
 
@@ -166,7 +173,7 @@ func (app *Application) OrdersDeleteHandler(w http.ResponseWriter, r *http.Reque
 	w.WriteHeader(http.StatusOK)
 }
 
-func (app *Application) OrdersUpdatedHandler(w http.ResponseWriter, r *http.Request) {
+func (app *Application) OrdersUpdatedHandler(shop string, w http.ResponseWriter, r *http.Request) {
   body, err := io.ReadAll(r.Body)
   if err != nil {
     http.Error(w, "failed to read body", http.StatusBadRequest)
@@ -180,7 +187,7 @@ func (app *Application) OrdersUpdatedHandler(w http.ResponseWriter, r *http.Requ
     return
 	}
 
-	order := shopifyToDatabaseOrder(payload)
+	order := shopifyToDatabaseOrder(shop, payload)
 	if err := app.db.UpsertOrder(&order); err != nil {
     log.Printf("failed to insert order : %s\n", err)
     http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -188,10 +195,11 @@ func (app *Application) OrdersUpdatedHandler(w http.ResponseWriter, r *http.Requ
 	
 	}
 
+	log.Println(order.UpdatedAt)
 	w.WriteHeader(http.StatusOK)
 }
 
-func (app *Application) OrdersFulfilledHandler(w http.ResponseWriter, r *http.Request) {
+func (app *Application) OrdersFulfilledHandler(shop string, w http.ResponseWriter, r *http.Request) {
   body, err := io.ReadAll(r.Body)
   if err != nil {
     http.Error(w, "failed to read body", http.StatusBadRequest)
@@ -205,7 +213,7 @@ func (app *Application) OrdersFulfilledHandler(w http.ResponseWriter, r *http.Re
     return
 	}
 
-	order := shopifyToDatabaseOrder(payload)
+	order := shopifyToDatabaseOrder(shop, payload)
 	order.Fulfilled = true
 	if err := app.db.UpsertOrder(&order); err != nil {
     log.Printf("failed to insert order : %s\n", err)
@@ -214,10 +222,11 @@ func (app *Application) OrdersFulfilledHandler(w http.ResponseWriter, r *http.Re
 	
 	}
 
+	log.Println(order.UpdatedAt)
 	w.WriteHeader(http.StatusOK)
 }
 
-func (app *Application) OrdersPaidHandler(w http.ResponseWriter, r *http.Request) {
+func (app *Application) OrdersPaidHandler(shop string, w http.ResponseWriter, r *http.Request) {
   body, err := io.ReadAll(r.Body)
   if err != nil {
     http.Error(w, "failed to read body", http.StatusBadRequest)
@@ -231,7 +240,7 @@ func (app *Application) OrdersPaidHandler(w http.ResponseWriter, r *http.Request
     return
 	}
 
-	order := shopifyToDatabaseOrder(payload)
+	order := shopifyToDatabaseOrder(shop, payload)
 	order.Paid = true
 	if err := app.db.UpsertOrder(&order); err != nil {
     log.Printf("failed to insert order : %s\n", err)
@@ -239,10 +248,11 @@ func (app *Application) OrdersPaidHandler(w http.ResponseWriter, r *http.Request
     return
 	}
 
+	log.Println(order.UpdatedAt)
 	w.WriteHeader(http.StatusOK)
 }
 
-func (app *Application) OrdersCanceledHandler(w http.ResponseWriter, r *http.Request) {
+func (app *Application) OrdersCanceledHandler(shop string, w http.ResponseWriter, r *http.Request) {
   body, err := io.ReadAll(r.Body)
   if err != nil {
     http.Error(w, "failed to read body", http.StatusBadRequest)
@@ -256,7 +266,7 @@ func (app *Application) OrdersCanceledHandler(w http.ResponseWriter, r *http.Req
     return
 	}
 
-	order := shopifyToDatabaseOrder(payload)
+	order := shopifyToDatabaseOrder(shop, payload)
 	order.Cancelled = true
 	if err := app.db.UpsertOrder(&order); err != nil {
     log.Printf("failed to insert order : %s\n", err)
@@ -264,5 +274,6 @@ func (app *Application) OrdersCanceledHandler(w http.ResponseWriter, r *http.Req
     return
 	}
 
+	log.Println(order.UpdatedAt)
 	w.WriteHeader(http.StatusOK)
 }

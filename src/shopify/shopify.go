@@ -82,6 +82,7 @@ type Order struct {
 	ShippingAddress          *MailingAddress `json:"shipping_address"`
 	ShippingLines            []ShippingLine  `json:"shipping_lines"`
 	LinesItems               []LineItem      `json:"line_items"`
+	UpdatedAt                time.Time       `json:"updated_at"`
 }
 
 func GetShopMoney(bag MoneyBag) int64 {

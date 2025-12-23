@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS orders (
   fulfilled BOOLEAN NOT NULL DEFAULT FALSE,
   deleted BOOLEAN NOT NULL DEFAULT FALSE,
   
-	created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	updated_at DATETIME NOT NULL,
+	created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS addresses (
@@ -45,6 +46,8 @@ CREATE TABLE IF NOT EXISTS addresses (
   zip TEXT,
   province TEXT,
   country TEXT,
+
+	updated_at DATETIME NOT NULL,
 
   UNIQUE(order_id),
   FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE
@@ -67,6 +70,8 @@ CREATE TABLE IF NOT EXISTS order_items (
   product_id INTEGER NOT NULL,
   variant_id INTEGER,
   sku TEXT NOT NULL,
+
+	updated_at DATETIME NOT NULL,
 
   FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE
 );
