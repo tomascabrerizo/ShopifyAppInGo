@@ -106,6 +106,10 @@ type Order struct {
 	CarrierName       *string 		`json:"carrier_name"`
 	CarrierCode       *string 		`json:"carrier_code"`
 	CarrierPrice      *int64  		`json:"carrier_price"`
+	Cancelled         bool        `json:"cancelled"`
+	Paid              bool        `json:"paid"`
+	Fulfilled         bool        `json:"fulfilled"`
+	Deleted           bool        `json:"deleted"`
 	CreatedAt         time.Time 	`json:"created_at"`
 	
 	ShippingAddress   *Address    `json:"shipping_address"`
@@ -146,6 +150,50 @@ func insertAddressTx(tx *sql.Tx, address *Address) error {
 	return nil
 }
 
+func upsertAddressTx(tx *sql.Tx, address *Address) error {
+	query := `
+		INSERT INTO addresses (
+			order_id, email, phone, name, last_name, 
+			address1, address2, "number", 
+			city, zip, province, country
+  	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(order_id) DO UPDATE SET
+			email = excluded.email,
+			phone = excluded.phone,
+			name = excluded.name,
+			last_name = excluded.last_name,
+			address1 = excluded.address1,
+			address2 = excluded.address2,
+			number = excluded.number,
+			city = excluded.city,
+			zip = excluded.zip,
+			province = excluded.province,
+			country = excluded.country;
+	`
+
+	_, err := tx.Exec(
+		query,
+		address.OrderID,
+		address.Email,
+		address.Phone,
+		address.Name,
+		address.LastName,
+		address.Address1,
+		address.Address2,
+		address.Number,
+		address.City,
+		address.Zip,
+		address.Province,
+		address.Country,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func insertItemTx(tx *sql.Tx, item *OrderItem) error {
 
 	query := `
@@ -155,6 +203,49 @@ func insertItemTx(tx *sql.Tx, item *OrderItem) error {
 			currency, price,
 			product_id, variant_id, sku
   	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+	`
+	_, err := tx.Exec(
+		query,
+		item.ItemID,
+		item.ItemApiID,
+		item.OrderID,
+		item.Name,
+		item.Grams,
+		item.Quantity,
+		item.Currency,
+		item.Price,
+		item.ProductID,
+		item.VariantID,
+		item.Sku,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func upsertItemTx(tx *sql.Tx, item *OrderItem) error {
+
+	query := `
+		INSERT INTO order_items (
+			item_id, item_api_id, order_id,
+			name, grams, quantity,
+			currency, price,
+			product_id, variant_id, sku
+  	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(item_id) DO UPDATE SET
+			item_api_id = excluded.item_api_id,
+			order_id = excluded.order_id,
+			name = excluded.name,
+			grams = excluded.grams,
+			quantity = excluded.quantity,
+			currency = excluded.currency,
+			price = excluded.price,
+			product_id = excluded.product_id,
+			variant_id = excluded.variant_id,
+			sku = excluded.sku;
 	`
 	_, err := tx.Exec(
 		query,
@@ -190,8 +281,10 @@ func (db *Database) InsertOrder(order *Order) error {
 		INSERT INTO orders (
   	  order_id, order_api_id, shop,
   	  currency, subtotal_price, shipping_price, discount, total_price,
-  	  carrier_name, carrier_code, carrier_price
-  	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+  	  carrier_name, carrier_code, carrier_price,
+			cancelled, paid, fulfilled
+  	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(order_id) DO NOTHING;
 	`
 
 	_, err = tx.Exec(
@@ -207,6 +300,9 @@ func (db *Database) InsertOrder(order *Order) error {
 		order.CarrierName,
 		order.CarrierCode,
 		order.CarrierPrice,
+		order.Cancelled,
+		order.Paid,
+		order.Fulfilled,
 	)
 
 	if err != nil {
@@ -232,8 +328,81 @@ func (db *Database) InsertOrder(order *Order) error {
 	return nil
 }
 
+func (db *Database) UpsertOrder(order *Order) error {
+	tx, err := db.handle.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	
+	query := `
+		INSERT INTO orders (
+  	  order_id, order_api_id, shop,
+  	  currency, subtotal_price, shipping_price, discount, total_price,
+  	  carrier_name, carrier_code, carrier_price,
+			cancelled, paid, fulfilled
+  	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(order_id) DO UPDATE SET
+			order_api_id = excluded.order_api_id,
+			shop = excluded.shop,
+			currency = excluded.currency,
+			subtotal_price = excluded.subtotal_price,
+			shipping_price = excluded.shipping_price,
+			discount = excluded.discount,
+			total_price = excluded.total_price,
+			carrier_name = excluded.carrier_name,
+			carrier_code = excluded.carrier_code,
+			carrier_price = excluded.carrier_price,
+			cancelled = orders.cancelled OR excluded.cancelled,
+			paid = orders.paid OR excluded.paid,
+			fulfilled = orders.fulfilled OR excluded.fulfilled,
+			deleted = orders.deleted OR excluded.deleted;
+	`
+
+	_, err = tx.Exec(
+		query,
+		order.OrderID,
+		order.OrderApiID,
+		order.Shop,
+		order.Currency,
+		order.SubtotalPrice,
+		order.ShippingPrice,
+		order.Discount,
+		order.TotalPrice,
+		order.CarrierName,
+		order.CarrierCode,
+		order.CarrierPrice,
+		order.Cancelled,
+		order.Paid,
+		order.Fulfilled,
+		order.Deleted,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	if order.ShippingAddress != nil {
+		if err := upsertAddressTx(tx, order.ShippingAddress); err != nil {
+			return err
+		}
+	}
+
+	for i := 0; i < len(order.Items); i++ {
+		if err := upsertItemTx(tx, &order.Items[i]); err != nil {
+			return err
+		} 
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (db *Database) DeleteOrder(orderID int64) error {
-	query := `DELETE FROM orders WHERE order_id = ?;`
+	query := `UPDATE orders SET deleted = TRUE WHERE order_id = ?;`
 	_, err := db.handle.Exec(query, orderID)
 	if err != nil {
 		return err

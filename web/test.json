@@ -1,40 +1,48 @@
 {
-    "id": 820982911946154508,
-    "admin_graphql_api_id": "gid://shopify/Order/820982911946154508",
-    "app_id": null,
-    "browser_ip": null,
-    "buyer_accepts_marketing": true,
-    "cancel_reason": "customer",
-    "cancelled_at": "2021-12-31T19:00:00-05:00",
+    "id": 10344086602020,
+    "admin_graphql_api_id": "gid:\/\/shopify\/Order\/10344086602020",
+    "app_id": 1354745,
+    "browser_ip": "186.122.0.220",
+    "buyer_accepts_marketing": false,
+    "cancel_reason": null,
+    "cancelled_at": null,
     "cart_token": null,
-    "checkout_id": null,
-    "checkout_token": null,
-    "client_details": null,
+    "checkout_id": 40720199876900,
+    "checkout_token": "5bbd86efdcd72c552f77c7dc31f61f15",
+    "client_details": {
+        "accept_language": null,
+        "browser_height": null,
+        "browser_ip": "186.122.0.220",
+        "browser_width": null,
+        "session_hash": null,
+        "user_agent": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/143.0.0.0 Safari\/537.36 Edg\/143.0.0.0"
+    },
     "closed_at": null,
-    "confirmation_number": null,
-    "confirmed": false,
-    "contact_email": "jon@example.com",
-    "created_at": "2021-12-31T19:00:00-05:00",
-    "currency": "USD",
+    "company": null,
+    "confirmation_number": "2HV2D2NNU",
+    "confirmed": true,
+    "contact_email": "tcabrerizo@gmail.com",
+    "created_at": "2025-12-23T10:11:26-03:00",
+    "currency": "ARS",
     "current_shipping_price_set": {
         "shop_money": {
             "amount": "0.00",
-            "currency_code": "USD"
+            "currency_code": "ARS"
         },
         "presentment_money": {
             "amount": "0.00",
-            "currency_code": "USD"
+            "currency_code": "ARS"
         }
     },
-    "current_subtotal_price": "369.97",
+    "current_subtotal_price": "103680.00",
     "current_subtotal_price_set": {
         "shop_money": {
-            "amount": "369.97",
-            "currency_code": "USD"
+            "amount": "103680.00",
+            "currency_code": "ARS"
         },
         "presentment_money": {
-            "amount": "369.97",
-            "currency_code": "USD"
+            "amount": "103680.00",
+            "currency_code": "ARS"
         }
     },
     "current_total_additional_fees_set": null,
@@ -42,223 +50,232 @@
     "current_total_discounts_set": {
         "shop_money": {
             "amount": "0.00",
-            "currency_code": "USD"
+            "currency_code": "ARS"
         },
         "presentment_money": {
             "amount": "0.00",
-            "currency_code": "USD"
+            "currency_code": "ARS"
         }
     },
     "current_total_duties_set": null,
-    "current_total_price": "369.97",
+    "current_total_price": "125452.80",
     "current_total_price_set": {
         "shop_money": {
-            "amount": "369.97",
-            "currency_code": "USD"
+            "amount": "125452.80",
+            "currency_code": "ARS"
         },
         "presentment_money": {
-            "amount": "369.97",
-            "currency_code": "USD"
+            "amount": "125452.80",
+            "currency_code": "ARS"
         }
     },
-    "current_total_tax": "0.00",
+    "current_total_tax": "21772.80",
     "current_total_tax_set": {
         "shop_money": {
-            "amount": "0.00",
-            "currency_code": "USD"
+            "amount": "21772.80",
+            "currency_code": "ARS"
         },
         "presentment_money": {
-            "amount": "0.00",
-            "currency_code": "USD"
+            "amount": "21772.80",
+            "currency_code": "ARS"
         }
     },
-    "customer_locale": "en",
+    "customer_locale": "en-AR",
     "device_id": null,
     "discount_codes": [],
     "duties_included": false,
-    "email": "jon@example.com",
+    "email": "tcabrerizo@gmail.com",
     "estimated_taxes": false,
-    "financial_status": "voided",
+    "financial_status": "paid",
     "fulfillment_status": null,
     "landing_site": null,
     "landing_site_ref": null,
     "location_id": null,
-    "merchant_business_entity_id": "MTU0ODM4MDAwOQ",
+    "merchant_business_entity_id": "MTk0NjMxNTI2Njky",
     "merchant_of_record_app_id": null,
-    "name": "#9999",
+    "name": "#1043",
     "note": null,
     "note_attributes": [],
-    "number": 234,
-    "order_number": 1234,
-    "order_status_url": "https://jsmith.myshopify.com/548380009/orders/123456abcd/authenticate?key=abcdefg",
+    "number": 43,
+    "order_number": 1043,
+    "order_status_url": "https:\/\/halfpipedev.myshopify.com\/94631526692\/orders\/c470c5e82f1e55c11f38f5605787911b\/authenticate?key=a737bf048c2e215ecf4bf062781dd2e2",
     "original_total_additional_fees_set": null,
     "original_total_duties_set": null,
     "payment_gateway_names": [
-        "visa",
-        "bogus"
+        "manual"
     ],
     "phone": null,
     "po_number": null,
-    "presentment_currency": "USD",
-    "processed_at": "2021-12-31T19:00:00-05:00",
+    "presentment_currency": "ARS",
+    "processed_at": "2025-12-23T10:11:26-03:00",
     "reference": null,
     "referring_site": null,
     "source_identifier": null,
-    "source_name": "web",
+    "source_name": "shopify_draft_order",
     "source_url": null,
-    "subtotal_price": "359.97",
+    "subtotal_price": "103680.00",
     "subtotal_price_set": {
         "shop_money": {
-            "amount": "359.97",
-            "currency_code": "USD"
+            "amount": "103680.00",
+            "currency_code": "ARS"
         },
         "presentment_money": {
-            "amount": "359.97",
-            "currency_code": "USD"
+            "amount": "103680.00",
+            "currency_code": "ARS"
         }
     },
-    "tags": "tag1, tag2",
+    "tags": "",
     "tax_exempt": false,
-    "tax_lines": [],
+    "tax_lines": [
+        {
+            "price": "21772.80",
+            "rate": 0.21,
+            "title": "VAT",
+            "price_set": {
+                "shop_money": {
+                    "amount": "21772.80",
+                    "currency_code": "ARS"
+                },
+                "presentment_money": {
+                    "amount": "21772.80",
+                    "currency_code": "ARS"
+                }
+            },
+            "channel_liable": false
+        }
+    ],
     "taxes_included": false,
-    "test": true,
-    "token": "123456abcd",
+    "test": false,
+    "token": "c470c5e82f1e55c11f38f5605787911b",
     "total_cash_rounding_payment_adjustment_set": {
         "shop_money": {
             "amount": "0.00",
-            "currency_code": "USD"
+            "currency_code": "ARS"
         },
         "presentment_money": {
             "amount": "0.00",
-            "currency_code": "USD"
+            "currency_code": "ARS"
         }
     },
     "total_cash_rounding_refund_adjustment_set": {
         "shop_money": {
             "amount": "0.00",
-            "currency_code": "USD"
+            "currency_code": "ARS"
         },
         "presentment_money": {
             "amount": "0.00",
-            "currency_code": "USD"
+            "currency_code": "ARS"
         }
     },
-    "total_discounts": "20.00",
+    "total_discounts": "0.00",
     "total_discounts_set": {
         "shop_money": {
-            "amount": "20.00",
-            "currency_code": "USD"
+            "amount": "0.00",
+            "currency_code": "ARS"
         },
         "presentment_money": {
-            "amount": "20.00",
-            "currency_code": "USD"
+            "amount": "0.00",
+            "currency_code": "ARS"
         }
     },
-    "total_line_items_price": "369.97",
+    "total_line_items_price": "103680.00",
     "total_line_items_price_set": {
         "shop_money": {
-            "amount": "369.97",
-            "currency_code": "USD"
+            "amount": "103680.00",
+            "currency_code": "ARS"
         },
         "presentment_money": {
-            "amount": "369.97",
-            "currency_code": "USD"
+            "amount": "103680.00",
+            "currency_code": "ARS"
         }
     },
-    "total_outstanding": "369.97",
-    "total_price": "359.97",
+    "total_outstanding": "0.00",
+    "total_price": "125452.80",
     "total_price_set": {
         "shop_money": {
-            "amount": "359.97",
-            "currency_code": "USD"
+            "amount": "125452.80",
+            "currency_code": "ARS"
         },
         "presentment_money": {
-            "amount": "359.97",
-            "currency_code": "USD"
+            "amount": "125452.80",
+            "currency_code": "ARS"
         }
     },
     "total_shipping_price_set": {
         "shop_money": {
-            "amount": "10.00",
-            "currency_code": "USD"
+            "amount": "0.00",
+            "currency_code": "ARS"
         },
         "presentment_money": {
-            "amount": "10.00",
-            "currency_code": "USD"
+            "amount": "0.00",
+            "currency_code": "ARS"
         }
     },
-    "total_tax": "0.00",
+    "total_tax": "21772.80",
     "total_tax_set": {
         "shop_money": {
-            "amount": "0.00",
-            "currency_code": "USD"
+            "amount": "21772.80",
+            "currency_code": "ARS"
         },
         "presentment_money": {
-            "amount": "0.00",
-            "currency_code": "USD"
+            "amount": "21772.80",
+            "currency_code": "ARS"
         }
     },
     "total_tip_received": "0.00",
-    "total_weight": 0,
-    "updated_at": "2021-12-31T19:00:00-05:00",
-    "user_id": null,
+    "total_weight": 14520,
+    "updated_at": "2025-12-23T10:11:27-03:00",
+    "user_id": 119938220324,
     "billing_address": {
-        "first_name": "Steve",
-        "address1": "123 Shipping Street",
-        "phone": "555-555-SHIP",
-        "city": "Shippington",
-        "zip": "40003",
-        "province": "Kentucky",
-        "country": "United States",
-        "last_name": "Shipper",
-        "address2": null,
-        "company": "Shipping Company",
-        "latitude": null,
-        "longitude": null,
-        "name": "Steve Shipper",
-        "country_code": "US",
-        "province_code": "KY"
+        "first_name": "Tomas",
+        "address1": "Estrada 2200",
+        "phone": "261 608-0302",
+        "city": "Mendoza",
+        "zip": "5522",
+        "province": "Mendoza",
+        "country": "Argentina",
+        "last_name": "Cabrerizo",
+        "address2": "Manzana h casa 1",
+        "company": null,
+        "latitude": -32.9660192,
+        "longitude": -68.7458623,
+        "name": "Tomas Cabrerizo",
+        "country_code": "AR",
+        "province_code": "M"
     },
     "customer": {
-        "id": 115310627314723954,
-        "created_at": null,
-        "updated_at": null,
-        "first_name": "John",
-        "last_name": "Smith",
+        "id": 23212106154276,
+        "created_at": "2025-11-12T14:59:38-03:00",
+        "updated_at": "2025-12-23T10:11:27-03:00",
+        "first_name": "Tomas",
+        "last_name": "Cabrerizo",
         "state": "disabled",
         "note": null,
         "verified_email": true,
         "multipass_identifier": null,
         "tax_exempt": false,
-        "email_marketing_consent": {
-            "state": "not_subscribed",
-            "opt_in_level": null,
-            "consent_updated_at": null
-        },
-        "sms_marketing_consent": null,
-        "tags": "",
-        "email": "john@example.com",
+        "email": "tcabrerizo@gmail.com",
         "phone": null,
-        "currency": "USD",
+        "currency": "ARS",
         "tax_exemptions": [],
-        "admin_graphql_api_id": "gid://shopify/Customer/115310627314723954",
+        "admin_graphql_api_id": "gid:\/\/shopify\/Customer\/23212106154276",
         "default_address": {
-            "id": 715243470612851245,
-            "customer_id": 115310627314723954,
-            "first_name": "John",
-            "last_name": "Smith",
+            "id": 33293149274404,
+            "customer_id": 23212106154276,
+            "first_name": "Tomas",
+            "last_name": "Cabrerizo",
             "company": null,
-            "address1": "123 Elm St.",
-            "address2": null,
-            "city": "Ottawa",
-            "province": "Ontario",
-            "country": "Canada",
-            "zip": "K2H7A8",
-            "phone": "123-123-1234",
-            "name": "John Smith",
-            "province_code": "ON",
-            "country_code": "CA",
-            "country_name": "Canada",
+            "address1": "Estrada 2200",
+            "address2": "Manzana h casa 1",
+            "city": "Mendoza",
+            "province": "Mendoza",
+            "country": "Argentina",
+            "zip": "5522",
+            "phone": "261 608-0302",
+            "name": "Tomas Cabrerizo",
+            "province_code": "M",
+            "country_code": "AR",
+            "country_name": "Argentina",
             "default": true
         }
     },
@@ -266,154 +283,136 @@
     "fulfillments": [],
     "line_items": [
         {
-            "id": 487817672276298554,
-            "admin_graphql_api_id": "gid://shopify/LineItem/487817672276298554",
-            "attributed_staffs": [
+            "id": 32347948253476,
+            "admin_graphql_api_id": "gid:\/\/shopify\/LineItem\/32347948253476",
+            "attributed_staffs": [],
+            "current_quantity": 1,
+            "fulfillable_quantity": 1,
+            "fulfillment_service": "manual",
+            "fulfillment_status": null,
+            "gift_card": false,
+            "grams": 7260,
+            "name": "Finca Flichman Estate Chardonnay - Viognier",
+            "price": "51840.00",
+            "price_set": {
+                "shop_money": {
+                    "amount": "51840.00",
+                    "currency_code": "ARS"
+                },
+                "presentment_money": {
+                    "amount": "51840.00",
+                    "currency_code": "ARS"
+                }
+            },
+            "product_exists": true,
+            "product_id": 10244279435556,
+            "properties": [],
+            "quantity": 1,
+            "requires_shipping": true,
+            "sales_line_item_group_id": null,
+            "sku": null,
+            "taxable": true,
+            "title": "Finca Flichman Estate Chardonnay - Viognier",
+            "total_discount": "0.00",
+            "total_discount_set": {
+                "shop_money": {
+                    "amount": "0.00",
+                    "currency_code": "ARS"
+                },
+                "presentment_money": {
+                    "amount": "0.00",
+                    "currency_code": "ARS"
+                }
+            },
+            "variant_id": 51304781873444,
+            "variant_inventory_management": "shopify",
+            "variant_title": null,
+            "vendor": "halfpipedev",
+            "tax_lines": [
                 {
-                    "id": "gid://shopify/StaffMember/902541635",
-                    "quantity": 1
+                    "channel_liable": false,
+                    "price": "10886.40",
+                    "price_set": {
+                        "shop_money": {
+                            "amount": "10886.40",
+                            "currency_code": "ARS"
+                        },
+                        "presentment_money": {
+                            "amount": "10886.40",
+                            "currency_code": "ARS"
+                        }
+                    },
+                    "rate": 0.21,
+                    "title": "VAT"
                 }
             ],
-            "current_quantity": 1,
-            "fulfillable_quantity": 1,
-            "fulfillment_service": "manual",
-            "fulfillment_status": null,
-            "gift_card": false,
-            "grams": 100,
-            "name": "Aviator sunglasses",
-            "price": "89.99",
-            "price_set": {
-                "shop_money": {
-                    "amount": "89.99",
-                    "currency_code": "USD"
-                },
-                "presentment_money": {
-                    "amount": "89.99",
-                    "currency_code": "USD"
-                }
-            },
-            "product_exists": true,
-            "product_id": 788032119674292922,
-            "properties": [],
-            "quantity": 1,
-            "requires_shipping": true,
-            "sku": "SKU2006-001",
-            "taxable": true,
-            "title": "Aviator sunglasses",
-            "total_discount": "0.00",
-            "total_discount_set": {
-                "shop_money": {
-                    "amount": "0.00",
-                    "currency_code": "USD"
-                },
-                "presentment_money": {
-                    "amount": "0.00",
-                    "currency_code": "USD"
-                }
-            },
-            "variant_id": null,
-            "variant_inventory_management": null,
-            "variant_title": null,
-            "vendor": null,
-            "tax_lines": [],
             "duties": [],
             "discount_allocations": []
         },
         {
-            "id": 976318377106520349,
-            "admin_graphql_api_id": "gid://shopify/LineItem/976318377106520349",
+            "id": 32347948286244,
+            "admin_graphql_api_id": "gid:\/\/shopify\/LineItem\/32347948286244",
             "attributed_staffs": [],
             "current_quantity": 1,
             "fulfillable_quantity": 1,
             "fulfillment_service": "manual",
             "fulfillment_status": null,
             "gift_card": false,
-            "grams": 1000,
-            "name": "Mid-century lounger",
-            "price": "159.99",
+            "grams": 7260,
+            "name": "Finca Flichman Reserva Cabernet",
+            "price": "51840.00",
             "price_set": {
                 "shop_money": {
-                    "amount": "159.99",
-                    "currency_code": "USD"
+                    "amount": "51840.00",
+                    "currency_code": "ARS"
                 },
                 "presentment_money": {
-                    "amount": "159.99",
-                    "currency_code": "USD"
+                    "amount": "51840.00",
+                    "currency_code": "ARS"
                 }
             },
             "product_exists": true,
-            "product_id": 788032119674292922,
+            "product_id": 10244280156452,
             "properties": [],
             "quantity": 1,
             "requires_shipping": true,
-            "sku": "SKU2006-020",
+            "sales_line_item_group_id": null,
+            "sku": null,
             "taxable": true,
-            "title": "Mid-century lounger",
+            "title": "Finca Flichman Reserva Cabernet",
             "total_discount": "0.00",
             "total_discount_set": {
                 "shop_money": {
                     "amount": "0.00",
-                    "currency_code": "USD"
+                    "currency_code": "ARS"
                 },
                 "presentment_money": {
                     "amount": "0.00",
-                    "currency_code": "USD"
+                    "currency_code": "ARS"
                 }
             },
-            "variant_id": null,
-            "variant_inventory_management": null,
+            "variant_id": 51304783413540,
+            "variant_inventory_management": "shopify",
             "variant_title": null,
-            "vendor": null,
-            "tax_lines": [],
-            "duties": [],
-            "discount_allocations": []
-        },
-        {
-            "id": 315789986012684393,
-            "admin_graphql_api_id": "gid://shopify/LineItem/315789986012684393",
-            "attributed_staffs": [],
-            "current_quantity": 1,
-            "fulfillable_quantity": 1,
-            "fulfillment_service": "manual",
-            "fulfillment_status": null,
-            "gift_card": false,
-            "grams": 500,
-            "name": "Coffee table",
-            "price": "119.99",
-            "price_set": {
-                "shop_money": {
-                    "amount": "119.99",
-                    "currency_code": "USD"
-                },
-                "presentment_money": {
-                    "amount": "119.99",
-                    "currency_code": "USD"
+            "vendor": "halfpipedev",
+            "tax_lines": [
+                {
+                    "channel_liable": false,
+                    "price": "10886.40",
+                    "price_set": {
+                        "shop_money": {
+                            "amount": "10886.40",
+                            "currency_code": "ARS"
+                        },
+                        "presentment_money": {
+                            "amount": "10886.40",
+                            "currency_code": "ARS"
+                        }
+                    },
+                    "rate": 0.21,
+                    "title": "VAT"
                 }
-            },
-            "product_exists": true,
-            "product_id": 788032119674292922,
-            "properties": [],
-            "quantity": 1,
-            "requires_shipping": true,
-            "sku": "SKU2006-035",
-            "taxable": true,
-            "title": "Coffee table",
-            "total_discount": "0.00",
-            "total_discount_set": {
-                "shop_money": {
-                    "amount": "0.00",
-                    "currency_code": "USD"
-                },
-                "presentment_money": {
-                    "amount": "0.00",
-                    "currency_code": "USD"
-                }
-            },
-            "variant_id": null,
-            "variant_inventory_management": null,
-            "variant_title": null,
-            "vendor": null,
-            "tax_lines": [],
+            ],
             "duties": [],
             "discount_allocations": []
         }
@@ -421,67 +420,23 @@
     "payment_terms": null,
     "refunds": [],
     "shipping_address": {
-        "first_name": "Steve",
-        "address1": "123 Shipping Street",
-        "phone": "555-555-SHIP",
-        "city": "Shippington",
-        "zip": "40003",
-        "province": "Kentucky",
-        "country": "United States",
-        "last_name": "Shipper",
-        "address2": null,
-        "company": "Shipping Company",
-        "latitude": null,
-        "longitude": null,
-        "name": "Steve Shipper",
-        "country_code": "US",
-        "province_code": "KY"
+        "first_name": "Tomas",
+        "address1": "Estrada 2200",
+        "phone": "261 608-0302",
+        "city": "Mendoza",
+        "zip": "5522",
+        "province": "Mendoza",
+        "country": "Argentina",
+        "last_name": "Cabrerizo",
+        "address2": "Manzana h casa 1",
+        "company": null,
+        "latitude": -32.9660192,
+        "longitude": -68.7458623,
+        "name": "Tomas Cabrerizo",
+        "country_code": "AR",
+        "province_code": "M"
     },
-    "shipping_lines": [
-        {
-            "id": 271878346596884015,
-            "carrier_identifier": null,
-            "code": null,
-            "current_discounted_price_set": {
-                "shop_money": {
-                    "amount": "0.00",
-                    "currency_code": "USD"
-                },
-                "presentment_money": {
-                    "amount": "0.00",
-                    "currency_code": "USD"
-                }
-            },
-            "discounted_price": "0.00",
-            "discounted_price_set": {
-                "shop_money": {
-                    "amount": "0.00",
-                    "currency_code": "USD"
-                },
-                "presentment_money": {
-                    "amount": "0.00",
-                    "currency_code": "USD"
-                }
-            },
-            "is_removed": false,
-            "phone": null,
-            "price": "10.00",
-            "price_set": {
-                "shop_money": {
-                    "amount": "10.00",
-                    "currency_code": "USD"
-                },
-                "presentment_money": {
-                    "amount": "10.00",
-                    "currency_code": "USD"
-                }
-            },
-            "requested_fulfillment_service_id": null,
-            "source": "shopify",
-            "title": "Generic Shipping",
-            "tax_lines": [],
-            "discount_allocations": []
-        }
-    ],
-    "returns": []
+    "shipping_lines": [],
+    "returns": [],
+    "line_item_groups": []
 }

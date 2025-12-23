@@ -37,6 +37,9 @@ func (app *Application) OrdersWebhook(w http.ResponseWriter, r *http.Request) {
 		case "orders/paid":
 			log.Println("OrdersPaidHandler:")
 			app.OrdersPaidHandler(w, r)
+		case "orders/cancelled":
+			log.Println("OrdersCanceledHandler:")
+			app.OrdersCanceledHandler(w, r)
 		default:
 			w.WriteHeader(http.StatusNoContent)
 	}
@@ -128,14 +131,13 @@ func (app *Application) OrdersCreateHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	order := shopifyToDatabaseOrder(payload)
-	if err := app.db.InsertOrder(&order); err != nil {
+	if err := app.db.UpsertOrder(&order); err != nil {
     log.Printf("failed to insert order : %s\n", err)
     http.Error(w, "internal server error", http.StatusInternalServerError)
     return
 	
 	}
 	
-	log.Printf("Order: %d created\n", order.OrderID)
   w.WriteHeader(http.StatusOK)
 }
 
@@ -165,31 +167,102 @@ func (app *Application) OrdersDeleteHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (app *Application) OrdersUpdatedHandler(w http.ResponseWriter, r *http.Request) {
-  _, err := io.ReadAll(r.Body)
+  body, err := io.ReadAll(r.Body)
   if err != nil {
     http.Error(w, "failed to read body", http.StatusBadRequest)
     return
   }
-  log.Println("Update handler reached")
+
+	payload := shopify.Order{}
+	if err := json.Unmarshal(body, &payload); err != nil {
+    log.Printf("failed to parse order webhook: %s\n", err)
+    http.Error(w, "invalid JSON", http.StatusBadRequest)
+    return
+	}
+
+	order := shopifyToDatabaseOrder(payload)
+	if err := app.db.UpsertOrder(&order); err != nil {
+    log.Printf("failed to insert order : %s\n", err)
+    http.Error(w, "internal server error", http.StatusInternalServerError)
+    return
+	
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
 func (app *Application) OrdersFulfilledHandler(w http.ResponseWriter, r *http.Request) {
-  _, err := io.ReadAll(r.Body)
+  body, err := io.ReadAll(r.Body)
   if err != nil {
     http.Error(w, "failed to read body", http.StatusBadRequest)
     return
   }
-  log.Println("Fulfill handler reached")
+
+	payload := shopify.Order{}
+	if err := json.Unmarshal(body, &payload); err != nil {
+    log.Printf("failed to parse order webhook: %s\n", err)
+    http.Error(w, "invalid JSON", http.StatusBadRequest)
+    return
+	}
+
+	order := shopifyToDatabaseOrder(payload)
+	order.Fulfilled = true
+	if err := app.db.UpsertOrder(&order); err != nil {
+    log.Printf("failed to insert order : %s\n", err)
+    http.Error(w, "internal server error", http.StatusInternalServerError)
+    return
+	
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
 func (app *Application) OrdersPaidHandler(w http.ResponseWriter, r *http.Request) {
-  _, err := io.ReadAll(r.Body)
+  body, err := io.ReadAll(r.Body)
   if err != nil {
     http.Error(w, "failed to read body", http.StatusBadRequest)
     return
   }
-  log.Println("Paid handler reached")
+
+	payload := shopify.Order{}
+	if err := json.Unmarshal(body, &payload); err != nil {
+    log.Printf("failed to parse order webhook: %s\n", err)
+    http.Error(w, "invalid JSON", http.StatusBadRequest)
+    return
+	}
+
+	order := shopifyToDatabaseOrder(payload)
+	order.Paid = true
+	if err := app.db.UpsertOrder(&order); err != nil {
+    log.Printf("failed to insert order : %s\n", err)
+    http.Error(w, "internal server error", http.StatusInternalServerError)
+    return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (app *Application) OrdersCanceledHandler(w http.ResponseWriter, r *http.Request) {
+  body, err := io.ReadAll(r.Body)
+  if err != nil {
+    http.Error(w, "failed to read body", http.StatusBadRequest)
+    return
+  }
+
+	payload := shopify.Order{}
+	if err := json.Unmarshal(body, &payload); err != nil {
+    log.Printf("failed to parse order webhook: %s\n", err)
+    http.Error(w, "invalid JSON", http.StatusBadRequest)
+    return
+	}
+
+	order := shopifyToDatabaseOrder(payload)
+	order.Cancelled = true
+	if err := app.db.UpsertOrder(&order); err != nil {
+    log.Printf("failed to insert order : %s\n", err)
+    http.Error(w, "internal server error", http.StatusInternalServerError)
+    return
+	}
+
 	w.WriteHeader(http.StatusOK)
 }

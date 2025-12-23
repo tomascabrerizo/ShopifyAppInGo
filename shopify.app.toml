@@ -19,6 +19,7 @@ topics = [
   "orders/fulfilled",
   "orders/paid",
   "orders/updated",
+  "orders/cancelled",
 ]
 uri = "https://59a8833d2158.ngrok-free.app/webhooks/orders"
 

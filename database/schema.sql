@@ -21,8 +21,11 @@ CREATE TABLE IF NOT EXISTS orders (
   carrier_code TEXT,
   carrier_price INTEGER,
   
-  shipping_address_id INTEGER,
-
+  cancelled BOOLEAN NOT NULL DEFAULT FALSE,
+  paid BOOLEAN NOT NULL DEFAULT FALSE,
+  fulfilled BOOLEAN NOT NULL DEFAULT FALSE,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  
 	created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
