@@ -17,6 +17,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"encoding/base64"
+
+	"tomi/src/database"
 )
 
 type MailingAddress struct {
@@ -85,7 +87,7 @@ type Order struct {
 	UpdatedAt                time.Time       `json:"updated_at"`
 }
 
-func GetShopMoney(bag MoneyBag) int64 {
+func getShopMoney(bag MoneyBag) int64 {
 	amount := bag.ShopMoney.Amount
 
 	parts := strings.Split(amount, ".")
@@ -110,6 +112,77 @@ func GetShopMoney(bag MoneyBag) int64 {
 		return 0
 	}
 	return i
+}
+
+func (o *Order) ToDatabaseOrder(shop string) database.Order {
+	subtotalPrice := getShopMoney(o.CurrentSubtotalPriceSet)
+	shippingPrice := getShopMoney(o.CurrentShippingPriceSet)
+	discount := getShopMoney(o.CurrentTotalDiscountsSet)
+	totalPrice := getShopMoney(o.CurrentTotalPriceSet)
+
+	var carrierName  *string = nil
+	var carrierCode  *string = nil
+	var carrierPrice int64  = 0 
+	if(len(o.ShippingLines) > 0) {
+		shippingLine := o.ShippingLines[0] 
+		carrierName = &shippingLine.Title
+		carrierCode = shippingLine.Code
+		carrierPrice = getShopMoney(shippingLine.PriceSet)
+	}
+	
+	var address *database.Address = nil
+	if o.ShippingAddress != nil {
+		address = &database.Address{
+			OrderID: &o.ID,
+			Email: o.ContactEmail,
+			Phone: o.ShippingAddress.Phone,
+			Name: o.ShippingAddress.Name,
+			LastName: o.ShippingAddress.LastName, 
+			Address1: o.ShippingAddress.Address1,
+			Address2: o.ShippingAddress.Address2,
+			Number: nil,
+			City: o.ShippingAddress.City,
+			Zip: o.ShippingAddress.Zip,
+			Province: o.ShippingAddress.Province,
+			Country: o.ShippingAddress.Country,
+		}
+	}
+
+	items := []database.OrderItem{}
+	for _, lineItem := range o.LinesItems {
+		item := database.OrderItem{
+			ItemID: lineItem.ID,
+			ItemApiID: lineItem.AdminGraphqlApiID,
+			OrderID: o.ID,
+			Name: lineItem.Name,
+			Grams: lineItem.Grams,
+			Quantity: lineItem.CurrentQuantity,
+			Price: getShopMoney(lineItem.PriceSet),
+			ProductID: lineItem.ProductID,
+			VariantID: lineItem.VariantID,
+			Sku: lineItem.Sku,
+		}
+		items = append(items, item)
+	}
+
+	result := database.Order{
+		OrderID: o.ID,
+		OrderApiID: o.AdminGraphqlApiID,
+		Shop: shop,
+		Currency: o.Currency,
+		SubtotalPrice: subtotalPrice,
+		ShippingPrice: shippingPrice,
+		Discount: discount,
+		TotalPrice: totalPrice,
+		CarrierName: carrierName,
+		CarrierCode: carrierCode,
+		CarrierPrice: &carrierPrice,
+		ShippingAddress: address,
+		Items: items,
+		UpdatedAt: o.UpdatedAt,
+	}
+
+	return result
 }
 
 func parseHmacAndMessage(r *http.Request) (string, string, error) {

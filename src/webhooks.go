@@ -3,11 +3,11 @@ package main
 import (
 	"io"
 	"log"
+	"time"
 	
 	"net/http"
+	
 	"encoding/json"
-
-	"tomi/src/database"
 	"tomi/src/shopify"
 )
 
@@ -17,263 +17,130 @@ func (app *Application) AppUninstalledWebHook(w http.ResponseWriter, r *http.Req
 	log.Println("App uninstall webhook reached")
 }
 
+type EventIdSB struct {
+	ids   [256]string
+	index int
+}
+
+func NewEventIdSB() *EventIdSB {
+	b := &EventIdSB{
+		index: 0,
+	}
+	return b
+}
+
+func (b *EventIdSB) Add(id string) {
+	b.ids[b.index] = id;
+	b.index = (b.index + 1) & (len(b.ids)-1)
+}
+
+func (b *EventIdSB) Contains(id string) bool {
+	if(id == "") {
+		return false
+	}
+	for _, other := range b.ids {
+		if id == other {
+			return true
+		}
+	}
+	return false
+}
+
+type Event struct {
+	Shop      string
+	Topic     string
+	EventID   string
+	TriggerAt time.Time
+	ReceiveAt time.Time
+	Body      []byte
+}
+
 func (app *Application) OrdersWebhook(w http.ResponseWriter, r *http.Request) {
 	// TODO: Verify shopify webhook
+	_ = r.Header.Get("X-Shopify-Hmac-Sha256")
 
-	topic := r.Header.Get("X-Shopify-Topic")
-	shop := r.Header.Get("X-Shopify-Shop-Domain")
+  body, err := io.ReadAll(r.Body)
+  if err != nil {
+    http.Error(w, "failed to read body", http.StatusBadRequest)
+    return
+  }
+	
 
-	// TODO: Check to webhook duplication
-	// TODO: Search for a better way to handle webhooks updatetimes
-
-	switch topic {
-		case "orders/create":
-			log.Println("OrdersCreateHandler:")
-			app.OrdersCreateHandler(shop, w, r)
-		case "orders/delete":
-			log.Println("OrdersDeleteHandler:")
-			app.OrdersDeleteHandler(w, r)
-		case "orders/updated":
-			log.Println("OrdersUpdatedHandler:")
-			app.OrdersUpdatedHandler(shop, w, r)
-		case "orders/fulfilled":
-			log.Println("OrdersFulfilledHandler:")
-			app.OrdersFulfilledHandler(shop, w, r)
-		case "orders/paid":
-			log.Println("OrdersPaidHandler:")
-			app.OrdersPaidHandler(shop, w, r)
-		case "orders/cancelled":
-			log.Println("OrdersCanceledHandler:")
-			app.OrdersCanceledHandler(shop, w, r)
-		default:
-			w.WriteHeader(http.StatusNoContent)
+	triggeredAt, err := time.Parse(time.RFC3339, r.Header.Get("X-Shopify-Triggered-At"))
+	if err != nil {
+		log.Printf("invalid Triggered-At header: %v", err)
+		triggeredAt = time.Now().UTC()
 	}
+	
+	event := Event{
+		Shop:    	 r.Header.Get("X-Shopify-Shop-Domain"), 
+		Topic:   	 r.Header.Get("X-Shopify-Topic"),
+		EventID: 	 r.Header.Get("X-Shopify-Event-Id"),
+		TriggerAt: triggeredAt, 
+		ReceiveAt: time.Now(),
+		Body:      body,
+	}
+
+	app.events <- event
+	
+	w.WriteHeader(http.StatusOK)
 }
 
-func shopifyToDatabaseOrder(shop string, order shopify.Order) database.Order {
-	
-	subtotalPrice := shopify.GetShopMoney(order.CurrentSubtotalPriceSet)
-	shippingPrice := shopify.GetShopMoney(order.CurrentShippingPriceSet)
-	discount := shopify.GetShopMoney(order.CurrentTotalDiscountsSet)
-	totalPrice := shopify.GetShopMoney(order.CurrentTotalPriceSet)
+func (app *Application) ProcessEvents() {
+	log.Println("Waiting for shopify events...")
+	for event := range app.events {
+		
+		if app.lastEventIds.Contains(event.EventID) {
+			log.Println("duplicate event received")
+			continue
+		}
+		app.lastEventIds.Add(event.EventID)
 
-	var carrierName  *string = nil
-	var carrierCode  *string = nil
-	var carrierPrice int64  = 0 
-	if(len(order.ShippingLines) > 0) {
-		shippingLine := order.ShippingLines[0] 
-		carrierName = &shippingLine.Title
-		carrierCode = shippingLine.Code
-		carrierPrice = shopify.GetShopMoney(shippingLine.PriceSet)
-	}
-	
-	var address *database.Address = nil
-	if order.ShippingAddress != nil {
-		address = &database.Address{
-			OrderID: &order.ID,
-			Email: order.ContactEmail,
-			Phone: order.ShippingAddress.Phone,
-			Name: order.ShippingAddress.Name,
-			LastName: order.ShippingAddress.LastName, 
-			Address1: order.ShippingAddress.Address1,
-			Address2: order.ShippingAddress.Address2,
-			Number: nil,
-			City: order.ShippingAddress.City,
-			Zip: order.ShippingAddress.Zip,
-			Province: order.ShippingAddress.Province,
-			Country: order.ShippingAddress.Country,
+		switch event.Topic {
+			case "orders/create":
+				payload := shopify.Order{}
+				if err := json.Unmarshal(event.Body, &payload); err != nil {
+					continue
+				}
+				order := payload.ToDatabaseOrder(event.Shop)
+				app.OnCreateOrderEvent(&order)
+			case "orders/delete":
+				payload := struct { 
+					ID string `json:"id"` 
+				}{} 
+				if err := json.Unmarshal(event.Body, &payload); err != nil {
+					continue
+				}
+				app.OnDeleteOrderEvent(payload.ID)
+			case "orders/updated":
+				payload := shopify.Order{}
+				if err := json.Unmarshal(event.Body, &payload); err != nil {
+					continue
+				}
+				order := payload.ToDatabaseOrder(event.Shop)
+				app.OnUpdateOrderEvent(&order)
+			case "orders/fulfilled":
+				payload := shopify.Order{}
+				if err := json.Unmarshal(event.Body, &payload); err != nil {
+					continue
+				}
+				order := payload.ToDatabaseOrder(event.Shop)
+				app.OnFulfilledOrderEvent(&order)
+			case "orders/paid":
+				payload := shopify.Order{}
+				if err := json.Unmarshal(event.Body, &payload); err != nil {
+					continue
+				}
+				order := payload.ToDatabaseOrder(event.Shop)
+				app.OnPaidOrderEvent(&order)
+			case "orders/cancelled":
+				payload := shopify.Order{}
+				if err := json.Unmarshal(event.Body, &payload); err != nil {
+					continue
+				}
+				order := payload.ToDatabaseOrder(event.Shop)
+				app.OnCancelledOrderEvent(&order)
 		}
 	}
-
-	items := []database.OrderItem{}
-	for _, lineItem := range order.LinesItems {
-		item := database.OrderItem{
-			ItemID: lineItem.ID,
-			ItemApiID: lineItem.AdminGraphqlApiID,
-			OrderID: order.ID,
-			Name: lineItem.Name,
-			Grams: lineItem.Grams,
-			Quantity: lineItem.CurrentQuantity,
-			Price: shopify.GetShopMoney(lineItem.PriceSet),
-			ProductID: lineItem.ProductID,
-			VariantID: lineItem.VariantID,
-			Sku: lineItem.Sku,
-		}
-		items = append(items, item)
-	}
-
-	result := database.Order{
-		OrderID: order.ID,
-		OrderApiID: order.AdminGraphqlApiID,
-		Shop: shop,
-		Currency: order.Currency,
-		SubtotalPrice: subtotalPrice,
-		ShippingPrice: shippingPrice,
-		Discount: discount,
-		TotalPrice: totalPrice,
-		CarrierName: carrierName,
-		CarrierCode: carrierCode,
-		CarrierPrice: &carrierPrice,
-		ShippingAddress: address,
-		Items: items,
-		UpdatedAt: order.UpdatedAt,
-	}
-
-	return result
 }
 
-func (app *Application) OrdersCreateHandler(shop string, w http.ResponseWriter, r *http.Request) {
-  body, err := io.ReadAll(r.Body)
-  if err != nil {
-    http.Error(w, "failed to read body", http.StatusBadRequest)
-    return
-  }
-	
-	payload := shopify.Order{}
-	if err := json.Unmarshal(body, &payload); err != nil {
-    log.Printf("failed to parse order webhook: %s\n", err)
-    http.Error(w, "invalid JSON", http.StatusBadRequest)
-    return
-	}
-
-	order := shopifyToDatabaseOrder(shop, payload)
-	if err := app.db.UpsertOrder(&order); err != nil {
-    log.Printf("failed to insert order : %s\n", err)
-    http.Error(w, "internal server error", http.StatusInternalServerError)
-    return
-	
-	}
-
-	log.Println(order.UpdatedAt)
-  w.WriteHeader(http.StatusOK)
-}
-
-func (app *Application) OrdersDeleteHandler(w http.ResponseWriter, r *http.Request) {
-  body, err := io.ReadAll(r.Body)
-  if err != nil {
-    http.Error(w, "failed to read body", http.StatusBadRequest)
-    return
-  }
-
-	payload := struct {
-		ID int64 `json:"id"`
-	}{} 
-	if err := json.Unmarshal(body, &payload); err != nil {
-    log.Printf("failed to parse order webhook: %s\n", err)
-    http.Error(w, "invalid JSON", http.StatusBadRequest)
-    return
-	}
-	
-	if err := app.db.DeleteOrder(payload.ID); err != nil {
-    log.Printf("failed to delete order : %s\n", err)
-    http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-}
-
-func (app *Application) OrdersUpdatedHandler(shop string, w http.ResponseWriter, r *http.Request) {
-  body, err := io.ReadAll(r.Body)
-  if err != nil {
-    http.Error(w, "failed to read body", http.StatusBadRequest)
-    return
-  }
-
-	payload := shopify.Order{}
-	if err := json.Unmarshal(body, &payload); err != nil {
-    log.Printf("failed to parse order webhook: %s\n", err)
-    http.Error(w, "invalid JSON", http.StatusBadRequest)
-    return
-	}
-
-	order := shopifyToDatabaseOrder(shop, payload)
-	if err := app.db.UpsertOrder(&order); err != nil {
-    log.Printf("failed to insert order : %s\n", err)
-    http.Error(w, "internal server error", http.StatusInternalServerError)
-    return
-	
-	}
-
-	log.Println(order.UpdatedAt)
-	w.WriteHeader(http.StatusOK)
-}
-
-func (app *Application) OrdersFulfilledHandler(shop string, w http.ResponseWriter, r *http.Request) {
-  body, err := io.ReadAll(r.Body)
-  if err != nil {
-    http.Error(w, "failed to read body", http.StatusBadRequest)
-    return
-  }
-
-	payload := shopify.Order{}
-	if err := json.Unmarshal(body, &payload); err != nil {
-    log.Printf("failed to parse order webhook: %s\n", err)
-    http.Error(w, "invalid JSON", http.StatusBadRequest)
-    return
-	}
-
-	order := shopifyToDatabaseOrder(shop, payload)
-	order.Fulfilled = true
-	if err := app.db.UpsertOrder(&order); err != nil {
-    log.Printf("failed to insert order : %s\n", err)
-    http.Error(w, "internal server error", http.StatusInternalServerError)
-    return
-	
-	}
-
-	log.Println(order.UpdatedAt)
-	w.WriteHeader(http.StatusOK)
-}
-
-func (app *Application) OrdersPaidHandler(shop string, w http.ResponseWriter, r *http.Request) {
-  body, err := io.ReadAll(r.Body)
-  if err != nil {
-    http.Error(w, "failed to read body", http.StatusBadRequest)
-    return
-  }
-
-	payload := shopify.Order{}
-	if err := json.Unmarshal(body, &payload); err != nil {
-    log.Printf("failed to parse order webhook: %s\n", err)
-    http.Error(w, "invalid JSON", http.StatusBadRequest)
-    return
-	}
-
-	order := shopifyToDatabaseOrder(shop, payload)
-	order.Paid = true
-	if err := app.db.UpsertOrder(&order); err != nil {
-    log.Printf("failed to insert order : %s\n", err)
-    http.Error(w, "internal server error", http.StatusInternalServerError)
-    return
-	}
-
-	log.Println(order.UpdatedAt)
-	w.WriteHeader(http.StatusOK)
-}
-
-func (app *Application) OrdersCanceledHandler(shop string, w http.ResponseWriter, r *http.Request) {
-  body, err := io.ReadAll(r.Body)
-  if err != nil {
-    http.Error(w, "failed to read body", http.StatusBadRequest)
-    return
-  }
-
-	payload := shopify.Order{}
-	if err := json.Unmarshal(body, &payload); err != nil {
-    log.Printf("failed to parse order webhook: %s\n", err)
-    http.Error(w, "invalid JSON", http.StatusBadRequest)
-    return
-	}
-
-	order := shopifyToDatabaseOrder(shop, payload)
-	order.Cancelled = true
-	if err := app.db.UpsertOrder(&order); err != nil {
-    log.Printf("failed to insert order : %s\n", err)
-    http.Error(w, "internal server error", http.StatusInternalServerError)
-    return
-	}
-
-	log.Println(order.UpdatedAt)
-	w.WriteHeader(http.StatusOK)
-}

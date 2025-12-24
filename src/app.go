@@ -16,6 +16,9 @@ type Application struct {
 	db *database.Database
 	proxy *httputil.ReverseProxy
 	shopify *shopify.Shopify
+	
+	events chan Event
+	lastEventIds *EventIdSB
 }
 
 func NewAppication() (*Application, error){
@@ -34,12 +37,18 @@ func NewAppication() (*Application, error){
 		os.Getenv("SHOPIFY_CLIENT_ID"),
 		os.Getenv("SHOPIFY_CLIENT_SECRET"), 
 	)
+
+	events := make(chan Event,  512)
 	
 	app := &Application{
 		db: db,
 		proxy: proxy,
 		shopify: shopify,
+		events: events,
+		lastEventIds: NewEventIdSB(),
 	}
+
+	go app.ProcessEvents()
 
 	return app, nil
 }
