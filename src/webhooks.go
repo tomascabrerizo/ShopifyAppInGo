@@ -103,7 +103,9 @@ func (app *Application) ProcessEvents() {
 					continue
 				}
 				order := payload.ToDatabaseOrder(event.Shop)
-				app.OnCreateOrderEvent(&order)
+				if err := app.OnCreateOrderEvent(&order); err != nil {
+					log.Println(err)
+				}
 			case "orders/delete":
 				payload := struct { 
 					ID int64 `json:"id"` 
@@ -111,35 +113,45 @@ func (app *Application) ProcessEvents() {
 				if err := json.Unmarshal(event.Body, &payload); err != nil {
 					continue
 				}
-				app.OnDeleteOrderEvent(payload.ID)
+				if err  := app.OnDeleteOrderEvent(payload.ID); err != nil {
+					log.Println(err)
+				}
 			case "orders/updated":
 				payload := shopify.Order{}
 				if err := json.Unmarshal(event.Body, &payload); err != nil {
 					continue
 				}
 				order := payload.ToDatabaseOrder(event.Shop)
-				app.OnUpdateOrderEvent(&order)
+				if err := app.OnUpdateOrderEvent(&order); err != nil {
+					log.Println(err)
+				}
 			case "orders/fulfilled":
 				payload := shopify.Order{}
 				if err := json.Unmarshal(event.Body, &payload); err != nil {
 					continue
 				}
 				order := payload.ToDatabaseOrder(event.Shop)
-				app.OnFulfilledOrderEvent(&order)
+				if err := app.OnFulfilledOrderEvent(&order); err != nil {
+					log.Println(err)
+				}
 			case "orders/paid":
 				payload := shopify.Order{}
 				if err := json.Unmarshal(event.Body, &payload); err != nil {
 					continue
 				}
 				order := payload.ToDatabaseOrder(event.Shop)
-				app.OnPaidOrderEvent(&order)
+				if err := app.OnPaidOrderEvent(&order); err != nil {
+					log.Println(err)
+				}
 			case "orders/cancelled":
 				payload := shopify.Order{}
 				if err := json.Unmarshal(event.Body, &payload); err != nil {
 					continue
 				}
 				order := payload.ToDatabaseOrder(event.Shop)
-				app.OnCancelledOrderEvent(&order)
+				if err := app.OnCancelledOrderEvent(&order); err != nil {
+					log.Println(err)
+				}
 		}
 	}
 }

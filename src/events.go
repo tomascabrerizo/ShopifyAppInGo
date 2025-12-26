@@ -27,7 +27,7 @@ func (app *Application) validateOrder(order *database.Order) (bool, time.Time, e
 	return true, last, nil
 }
 
-func (app *Application) upsertOrden(order *database.Order) error {
+func (app *Application) upsertOrder(order *database.Order) error {
 	exist, last, err := app.validateOrder(order) 
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func (app *Application) upsertOrden(order *database.Order) error {
 }
 
 func (app *Application) OnCreateOrderEvent(order *database.Order) error {
-	if err := app.upsertOrden(order); err != nil {
+	if err := app.upsertOrder(order); err != nil {
 		return err
 	}
 	return nil
@@ -59,14 +59,14 @@ func (app *Application) OnDeleteOrderEvent(id int64)  error {
 }
 
 func (app *Application) OnUpdateOrderEvent(order *database.Order) error {
-	if err := app.upsertOrden(order); err != nil {
+	if err := app.upsertOrder(order); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (app *Application) OnFulfilledOrderEvent(order *database.Order) error {
-	if err := app.upsertOrden(order); err != nil {
+	if err := app.upsertOrder(order); err != nil {
 		return err
 	}
 	if err := app.db.FulfillOrder(order); err != nil {
@@ -76,7 +76,7 @@ func (app *Application) OnFulfilledOrderEvent(order *database.Order) error {
 }
 
 func (app *Application) OnPaidOrderEvent(order *database.Order) error {
-	if err := app.upsertOrden(order); err != nil {
+	if err := app.upsertOrder(order); err != nil {
 		return err
 	}
 	if err := app.db.PayOrder(order); err != nil {
@@ -86,7 +86,7 @@ func (app *Application) OnPaidOrderEvent(order *database.Order) error {
 }
 
 func (app *Application) OnCancelledOrderEvent(order *database.Order) error {
-	if err := app.upsertOrden(order); err != nil {
+	if err := app.upsertOrder(order); err != nil {
 		return err
 	}
 	if err := app.db.CancelOrder(order); err != nil {

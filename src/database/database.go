@@ -163,7 +163,7 @@ func UpdateAddressTx(tx *sql.Tx, address *Address) error {
 			zip = ?,
 			province = ?,
 			country = ?
-		WHERE address_id = ?;
+		WHERE order_id = ?;
 	`
 	
 	_, err := tx.Exec(
@@ -195,7 +195,7 @@ func InsertItemTx(tx *sql.Tx, item *OrderItem) error {
 			item_id, item_api_id, order_id,
 			name, grams, quantity,
 			currency, price,
-			product_id, variant_id, sku,
+			product_id, variant_id, sku
   	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 	`
 	_, err := tx.Exec(
@@ -332,7 +332,7 @@ func (db *Database) UpdateOrder(order *Order) error {
 			carrier_name = ?, 
 			carrier_code = ?, 
 			carrier_price = ?, 
-			updated_at = ?, 
+			updated_at = ? 
 		WHERE order_id = ?;
 	`
 

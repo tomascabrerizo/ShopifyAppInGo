@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 
 CREATE TABLE IF NOT EXISTS orders_tombstone(
-  order_id INTEGER NOT NULL UNIQUE,
+  order_id INTEGER NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS addresses (
