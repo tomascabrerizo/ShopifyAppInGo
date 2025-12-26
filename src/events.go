@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"time"
 	"errors"
 
@@ -48,6 +49,7 @@ func (app *Application) OnCreateOrderEvent(order *database.Order) error {
 	if err := app.upsertOrder(order); err != nil {
 		return err
 	}
+	log.Printf("order created: %d\n", order.OrderID)
 	return nil
 }
 
@@ -55,6 +57,7 @@ func (app *Application) OnDeleteOrderEvent(id int64)  error {
 	if err := app.db.DeleteOrder(id); err != nil {
 		return err
 	}
+	log.Printf("order deleted: %d\n", id)
 	return nil
 }
 
@@ -62,6 +65,7 @@ func (app *Application) OnUpdateOrderEvent(order *database.Order) error {
 	if err := app.upsertOrder(order); err != nil {
 		return err
 	}
+	log.Printf("order updated: %d\n", order.OrderID)
 	return nil
 }
 
@@ -72,6 +76,7 @@ func (app *Application) OnFulfilledOrderEvent(order *database.Order) error {
 	if err := app.db.FulfillOrder(order); err != nil {
 		return err
 	}
+	log.Printf("order fulfilled: %d\n", order.OrderID)
 	return nil
 }
 
@@ -82,6 +87,7 @@ func (app *Application) OnPaidOrderEvent(order *database.Order) error {
 	if err := app.db.PayOrder(order); err != nil {
 		return err
 	}
+	log.Printf("order paid: %d\n", order.OrderID)
 	return nil
 }
 
@@ -92,5 +98,6 @@ func (app *Application) OnCancelledOrderEvent(order *database.Order) error {
 	if err := app.db.CancelOrder(order); err != nil {
 		return err
 	}
+	log.Printf("order cancelled: %d\n", order.OrderID)
 	return nil
 }

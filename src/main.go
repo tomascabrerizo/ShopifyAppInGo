@@ -118,6 +118,11 @@ func main() {
 	http.HandleFunc("/api/auth", app.AuthHandler)
 	http.HandleFunc("/api/auth/callback", app.AuthCallbackHandler)
 
+	http.Handle(
+		"GET /api/orders",
+		shopifyAuth(http.HandlerFunc(app.GetOrdersHandler)),
+	)
+
 	log.Print("Listening...")
 	http.ListenAndServe("0.0.0.0:3000", cors(http.DefaultServeMux))
 

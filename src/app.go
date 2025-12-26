@@ -4,6 +4,8 @@ import (
 	"os"
 	"log"
 	
+	"encoding/json"
+
 	"net/url"
 	"net/http"
 	"net/http/httputil"
@@ -115,4 +117,19 @@ func (app *Application) AuthCallbackHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	http.Redirect(w, r, embeddedUrl, http.StatusFound)
+}
+
+func (app *Application) GetOrdersHandler(w http.ResponseWriter, r *http.Request) {
+	shop := os.Getenv("SHOPIFY_SHOP_NAME")
+	orders, err := app.db.GetUnfulfilledOrders(shop)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(orders); err != nil {
+		log.Println("json encode error:", err.Error())
+	}
 }

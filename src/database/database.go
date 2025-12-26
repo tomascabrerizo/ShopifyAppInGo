@@ -456,3 +456,70 @@ func (db *Database) OrderWasDeleted(orderID int64) bool {
 	}
 	return true 
 }
+
+func (db *Database) GetUnfulfilledOrders(shop string) ([]Order, error) {
+	query := `
+		SELECT 
+			o.order_id, o.shop, o.currency,
+			o.subtotal_price, o.shipping_price, o.discount, o.total_price,
+			o.carrier_name, o.carrier_code, o.carrier_price,
+			o.cancelled, o.paid, o.fulfilled,
+			o.updated_at, o.created_at,
+			a.address_id, a.email, a.phone, a.name, a.last_name, 
+			a.address1, a.address2,
+			a."number", a.city, a.zip, a.province, a.country 
+		FROM orders AS o 
+		JOIN addresses AS a ON o.order_id = a.order_id
+		WHERE 
+			shop = ?
+			AND fulfilled = FALSE;
+	`
+	
+	rows, err := db.handle.Query(query, shop)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	orders := []Order{}
+
+	for rows.Next() {
+		order := Order{}
+		order.ShippingAddress = &Address{} 
+		if err := rows.Scan(
+			&order.OrderID,
+			&order.Shop,
+			&order.Currency,
+			&order.SubtotalPrice,
+			&order.ShippingPrice,
+			&order.Discount,
+			&order.TotalPrice,
+			&order.CarrierName,
+			&order.CarrierCode,
+			&order.CarrierPrice,
+			&order.Cancelled,
+			&order.Paid,
+			&order.Fulfilled,
+			&order.UpdatedAt,
+			&order.CreatedAt,
+			&order.ShippingAddress.AddressID,
+			&order.ShippingAddress.Email,
+			&order.ShippingAddress.Phone,
+			&order.ShippingAddress.Name,
+			&order.ShippingAddress.LastName,
+			&order.ShippingAddress.Address1,
+			&order.ShippingAddress.Address2,
+			&order.ShippingAddress.Number,
+			&order.ShippingAddress.City,
+			&order.ShippingAddress.Zip,
+			&order.ShippingAddress.Province,
+			&order.ShippingAddress.Country,
+		); err != nil {
+			return nil, err
+		}
+
+		orders = append(orders, order)
+	}
+
+	return orders, nil
+}
