@@ -106,7 +106,7 @@ func (app *Application) ProcessEvents() {
 				app.OnCreateOrderEvent(&order)
 			case "orders/delete":
 				payload := struct { 
-					ID string `json:"id"` 
+					ID int64 `json:"id"` 
 				}{} 
 				if err := json.Unmarshal(event.Body, &payload); err != nil {
 					continue
