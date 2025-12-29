@@ -222,7 +222,7 @@ func hmacSHA256(message, secret string) string {
 }
 
 type Shopify struct {
-	ID string
+	ID     string
 	Secret string
 }
 
@@ -302,10 +302,10 @@ func (s *Shopify) OAuthRequestAccessToken(shop, code string) (*AccessTokenRespon
   }
 	req.Header.Set("Content-Type", "application/json")
 
+
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
-	
 	resp, err := client.Do(req)
   if err != nil {
 		return nil, err
@@ -323,3 +323,4 @@ func (s *Shopify) OAuthRequestAccessToken(shop, code string) (*AccessTokenRespon
 
 	return tokenResp, nil
 }
+

@@ -4,6 +4,7 @@ import (
 	"os"
 	"fmt"
 	"log"
+	"time"
 	"strings"
 
 	"net/url"
@@ -62,8 +63,10 @@ func shopifyAuth(next http.Handler) http.Handler {
 			},
 			jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
 			jwt.WithExpirationRequired(),
+			jwt.WithLeeway(30*time.Second),
 		)
 		if err != nil {
+			log.Println("jwt parser fails!")
 			log.Println(err.Error())
 			unauthorizedResponse(w)
 			return
@@ -121,6 +124,16 @@ func main() {
 	http.Handle(
 		"GET /api/orders",
 		shopifyAuth(http.HandlerFunc(app.GetOrdersHandler)),
+	)
+
+	http.Handle(
+		"POST /api/carrier-service",
+		shopifyAuth(http.HandlerFunc(app.CreateCarrierServiceHandler)),
+	)
+
+	http.Handle(
+		"GET /api/carrier-service",
+		shopifyAuth(http.HandlerFunc(app.GetCarrierServicesHandler)),
 	)
 
 	log.Print("Listening...")

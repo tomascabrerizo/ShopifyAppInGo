@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"log"
+	"time"
 	
 	"encoding/json"
 
@@ -18,6 +19,7 @@ type Application struct {
 	db *database.Database
 	proxy *httputil.ReverseProxy
 	shopify *shopify.Shopify
+	client *http.Client
 	
 	events chan Event
 	lastEventIds *EventIdSB
@@ -34,7 +36,7 @@ func NewAppication() (*Application, error){
 		return nil, err
 	}
 	proxy := httputil.NewSingleHostReverseProxy(target)
-	
+
 	shopify := shopify.NewShop(
 		os.Getenv("SHOPIFY_CLIENT_ID"),
 		os.Getenv("SHOPIFY_CLIENT_SECRET"), 
@@ -48,6 +50,9 @@ func NewAppication() (*Application, error){
 		shopify: shopify,
 		events: events,
 		lastEventIds: NewEventIdSB(),
+		client: &http.Client{
+			Timeout: 10 * time.Second,
+		},
 	}
 
 	go app.ProcessEvents()
@@ -108,7 +113,7 @@ func (app *Application) AuthCallbackHandler(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
-	
+
 	embeddedUrl, err := app.shopify.EmbeddedUrl(host) 
 	if err != nil {
 		log.Println(err.Error())
@@ -130,6 +135,56 @@ func (app *Application) GetOrdersHandler(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(orders); err != nil {
+		log.Println("json encode error:", err.Error())
+	}
+}
+
+func (app *Application) CreateCarrierServiceHandler(w http.ResponseWriter, r *http.Request) {
+	shop := os.Getenv("SHOPIFY_SHOP_NAME")	
+	
+	type CreateCarrierServicePayload struct {
+		Name        string `json:"name"`
+		CallbackURL string `json:"callbackUrl"`
+	}
+	
+	var payload CreateCarrierServicePayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "invalid JSON body", http.StatusBadRequest)
+		return
+	}
+
+	carrierService, err := app.CarrierServiceCreate(
+		shop, 
+		payload.Name,
+		payload.CallbackURL,
+	)
+	
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	log.Println(payload.Name)
+	log.Println(payload.CallbackURL)
+	log.Printf("%v", carrierService)
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (app *Application) GetCarrierServicesHandler(w http.ResponseWriter, r *http.Request) {
+	shop := os.Getenv("SHOPIFY_SHOP_NAME")
+	
+	services, err := app.GetCarrierServices(shop)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(services); err != nil {
 		log.Println("json encode error:", err.Error())
 	}
 }
