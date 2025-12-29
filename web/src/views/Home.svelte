@@ -9,9 +9,13 @@
 
     onMount(() => {
         (async () => {
-            const res = await shopify.fetch("/api/orders");
-            const data = await res.json();
-            orders = data;
+            try {
+                const res = await shopify.fetch("/api/orders");
+                const data = await res.json();
+                orders = data;
+            } catch (e) {
+                console.error("failed to get oreders:", e);
+            }
         })();
     });
 </script>
@@ -27,7 +31,9 @@
             <s-table-header listSlot="inline">Fecha</s-table-header>
             <s-table-header listSlot="inline">Cliente</s-table-header>
             <s-table-header listSlot="inline">Estado de pago</s-table-header>
-            <s-table-header listSlot="inline">Total</s-table-header>
+            <s-table-header listSlot="inline" format="currency"
+                >Total</s-table-header
+            >
         </s-table-header-row>
         <s-table-body>
             {#each orders as order}
