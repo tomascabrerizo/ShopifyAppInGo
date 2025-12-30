@@ -1,0 +1,11 @@
+{
+    "query": "mutation CarrierServiceCreate($input: DeliveryCarrierServiceCreateInput!) { carrierServiceCreate(input: $input) { carrierService { id name callbackUrl active supportsServiceDiscovery } userErrors { field message } } }",
+    "variables": {
+        "input": {
+            "name": "test carrier service",
+            "callbackUrl": "https://example.com/",
+            "supportsServiceDiscovery": true,
+            "active": true
+        }
+    }
+}

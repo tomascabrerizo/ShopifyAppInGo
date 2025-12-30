@@ -2,10 +2,7 @@
     import { onMount, getContext } from "svelte";
 
     const shopify = getContext("shopify");
-    $inspect(shopify);
-
     let orders = $state([]);
-    $inspect(orders);
 
     onMount(() => {
         (async () => {

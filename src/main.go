@@ -136,6 +136,11 @@ func main() {
 		shopifyAuth(http.HandlerFunc(app.GetCarrierServicesHandler)),
 	)
 
+	http.Handle(
+		"DELETE /api/carrier-service/{serviceID}",
+		shopifyAuth(http.HandlerFunc(app.DeleteCarrierServicesHandler)),
+	)
+
 	log.Print("Listening...")
 	http.ListenAndServe("0.0.0.0:3000", cors(http.DefaultServeMux))
 

@@ -142,12 +142,12 @@ func (app *Application) GetOrdersHandler(w http.ResponseWriter, r *http.Request)
 func (app *Application) CreateCarrierServiceHandler(w http.ResponseWriter, r *http.Request) {
 	shop := os.Getenv("SHOPIFY_SHOP_NAME")	
 	
-	type CreateCarrierServicePayload struct {
+	type Payload struct {
 		Name        string `json:"name"`
 		CallbackURL string `json:"callbackUrl"`
 	}
 	
-	var payload CreateCarrierServicePayload
+	var payload Payload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
@@ -158,18 +158,17 @@ func (app *Application) CreateCarrierServiceHandler(w http.ResponseWriter, r *ht
 		payload.Name,
 		payload.CallbackURL,
 	)
-	
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	log.Println(payload.Name)
-	log.Println(payload.CallbackURL)
-	log.Printf("%v", carrierService)
-
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(carrierService); err != nil {
+		log.Println("json encode error:", err.Error())
+	}
 }
 
 func (app *Application) GetCarrierServicesHandler(w http.ResponseWriter, r *http.Request) {
@@ -187,4 +186,39 @@ func (app *Application) GetCarrierServicesHandler(w http.ResponseWriter, r *http
 	if err := json.NewEncoder(w).Encode(services); err != nil {
 		log.Println("json encode error:", err.Error())
 	}
+}
+
+func (app *Application) DeleteCarrierServicesHandler(w http.ResponseWriter, r *http.Request) {
+	shop := os.Getenv("SHOPIFY_SHOP_NAME")	
+	id :=  r.PathValue("serviceID")
+	if id == "" {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+  	return
+	}
+	
+	unscaped, err := url.PathUnescape(id)
+	if err != nil {
+	    http.Error(w, "invalid id", http.StatusBadRequest)
+	    return
+	}
+
+	log.Println(unscaped)
+
+	carrierService, err := app.CarrierServiceDelete(
+		shop, 
+		unscaped,
+	)
+	
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(carrierService); err != nil {
+		log.Println("json encode error:", err.Error())
+	}
+
 }
