@@ -323,4 +323,3 @@ func (s *Shopify) OAuthRequestAccessToken(shop, code string) (*AccessTokenRespon
 
 	return tokenResp, nil
 }
-

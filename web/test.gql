@@ -1,0 +1,13 @@
+query ProductMetafields($ownerId: ID!) { 
+    product(id: $ownerId) {
+        largo: metafield(namespace: "custom", key: "largo") {
+          value
+        }
+        ancho: metafield(namespace: "custom", key: "ancho") {
+          value
+        }
+        alto: metafield(namespace: "custom", key: "alto") {
+          value
+        }
+    }
+}

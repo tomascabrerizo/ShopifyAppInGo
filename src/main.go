@@ -110,7 +110,7 @@ func main() {
 		log.Fatal(err.Error())
 	}
 	defer app.Shutdown()
-
+	
 	http.HandleFunc("/webhooks/app-uninstalled", app.AppUninstalledWebHook)
 	http.HandleFunc("/webhooks/orders", app.OrdersWebhook)
 
@@ -140,6 +140,8 @@ func main() {
 		"DELETE /api/carrier-service/{serviceID}",
 		shopifyAuth(http.HandlerFunc(app.DeleteCarrierServicesHandler)),
 	)
+
+	http.HandleFunc("POST /api/carrier-service/callback", app.CarrierServiceCallbackHandler)
 
 	log.Print("Listening...")
 	http.ListenAndServe("0.0.0.0:3000", cors(http.DefaultServeMux))

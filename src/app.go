@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"log"
+	"fmt"
 	"time"
 	
 	"encoding/json"
@@ -221,4 +222,50 @@ func (app *Application) DeleteCarrierServicesHandler(w http.ResponseWriter, r *h
 		log.Println("json encode error:", err.Error())
 	}
 
+}
+
+func (app *Application) CarrierServiceCallbackHandler(w http.ResponseWriter, r *http.Request) {
+	shop := os.Getenv("SHOPIFY_SHOP_NAME")	
+
+	type Address struct {
+		Country     string `json:"country"`
+		PostalCode string `json:"postal_code"`
+	}
+
+	type Item struct {
+		Quantity  int   `json:"quantity"`
+		Grams     int64 `json:"grams"`
+		ProductID int64 `json:"product_id"`
+		VariantID int64 `json:"variant_id"`
+	}
+
+	var payload struct{
+		Rate struct {
+			Origin      Address `json:"origin"`
+			Destination Address `json:"destination"`
+			Items       []Item  `json:"items"`
+		} `json:"rate"` 
+	}
+	
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// TODO: Factor out volumen calculation
+	var totalVolumen float64 = 0
+	for _, item := range payload.Rate.Items {
+		productID := fmt.Sprintf("gid://shopify/Product/%d", item.ProductID)
+		// TODO: Cache products dims on application map
+		dim, err := app.GetProductDimensions(shop, productID)
+		if err != nil {
+			log.Println(err.Error())
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+		volumen := dim.Width * dim.Height * dim.Length
+		totalVolumen += volumen * float64(item.Quantity)
+	}
+
+	log.Printf("%f\n", totalVolumen)
 }
