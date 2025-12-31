@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strconv"
 	"fmt"
 	"log"
 	"os"
@@ -49,6 +50,7 @@ func NewAppication() (*Application, error) {
 	andApi := andreani.NewApi(
 		os.Getenv("ANDREANI_CLIENT_CODE"),
 		os.Getenv("ANDREANI_ACCESS_TOKEN"),
+		os.Getenv("ANDREANI_BASE_URL"),
 	)
 
 	events := make(chan Event, 512)
@@ -73,7 +75,7 @@ func (app *Application) Shutdown() {
 }
 
 func (app *Application) MainHandler(w http.ResponseWriter, r *http.Request) {
-	if err := app.shopApi.Verify(r); err == nil {
+	if err := shopify.Verify(app.shopApi, r); err == nil {
 		_, err := app.db.GetAccessToken(r.URL.Query().Get("shop"))
 		if err != nil {
 			http.ServeFile(w, r, "./app_bridge/dist/index.html")
@@ -84,19 +86,19 @@ func (app *Application) MainHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) AuthHandler(w http.ResponseWriter, r *http.Request) {
-	if err := app.shopApi.Verify(r); err != nil {
+	if err := shopify.Verify(app.shopApi, r); err != nil {
 		app.proxy.ServeHTTP(w, r)
 		return
 	}
 
 	shop := r.URL.Query().Get("shop")
 	// TODO: Generate random state and save it to a cookie
-	url := app.shopApi.OAuthUrl(r.Host, shop, "123")
+	url := shopify.OAuthUrl(app.shopApi, r.Host, shop, "123")
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
 func (app *Application) AuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
-	if err := app.shopApi.Verify(r); err != nil {
+	if err := shopify.Verify(app.shopApi, r); err != nil {
 		http.Error(w, "unauthorize request", http.StatusUnauthorized)
 		return
 	}
@@ -249,6 +251,13 @@ func (app *Application) DeleteCarrierServicesHandler(w http.ResponseWriter, r *h
 }
 
 func (app *Application) CarrierServiceCallbackHandler(w http.ResponseWriter, r *http.Request) {
+	token, err := app.db.GetAccessToken(app.shop)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
 	type Address struct {
 		Country    string `json:"country"`
 		PostalCode string `json:"postal_code"`
@@ -283,12 +292,23 @@ func (app *Application) CarrierServiceCallbackHandler(w http.ResponseWriter, r *
 		items = append(items, item)
 	}
 
-	volumen, err := app.calculatePackageVolumen(app.shop, items)
+	volumen, err := calculatePackageVolumen(app.shopApi, token.Access, app.shop, items)
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("%f\n", volumen)
+	contratoEntrega := "400017493"
+	zip := onlyDigits(payload.Rate.Destination.PostalCode)
+	volumenStr := strconv.FormatFloat(volumen, 'f', 2, 64)
+	
+	rate, err := app.andApi.CalculateShippingRate(contratoEntrega, zip, volumenStr)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("%v\n", rate)
 }

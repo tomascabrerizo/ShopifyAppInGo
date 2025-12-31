@@ -38,13 +38,24 @@ func matchShops(iss string, dest string) bool {
   if err != nil {
 		return false
   }
-  destURL, err := url.Parse(dest)
-  if err != nil {
+  
+	destURL, err := url.Parse(dest)
+	if err != nil {
 		return false
   }
+	
 	baseISS := fmt.Sprintf("%s://%s", issURL.Scheme, issURL.Host)
-  baseDest := fmt.Sprintf("%s://%s", destURL.Scheme, destURL.Host)
-  return strings.EqualFold(baseISS, baseDest)
+	baseDest := fmt.Sprintf("%s://%s", destURL.Scheme, destURL.Host)
+	
+	if !strings.EqualFold(baseISS, baseDest) {
+		return false;
+	}
+  
+	if !strings.EqualFold(issURL.Host, os.Getenv("SHOPIFY_SHOP_NAME")) {
+		return false;
+	}
+
+	return true
 }
 
 func shopifyAuth(next http.Handler) http.Handler {
