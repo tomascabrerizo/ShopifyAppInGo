@@ -1,65 +1,26 @@
 {
-    "rate": {
-        "origin": {
-            "country": "AR",
-            "postal_code": "M5517",
-            "province": "M",
-            "city": "Maipu",
-            "name": null,
-            "address1": "Munives 800",
-            "address2": "Finca Flichman",
-            "address3": null,
-            "latitude": -33.0950115,
-            "longitude": -68.7209945,
-            "phone": "",
-            "fax": null,
-            "email": null,
-            "address_type": null,
-            "company_name": "halfpipedev"
-        },
-        "destination": {
-            "country": "AR",
-            "postal_code": "M5553",
-            "province": "M",
-            "city": "guaymallen",
-            "name": null,
-            "address1": "Estrada 2200",
-            "address2": null,
-            "address3": null,
-            "latitude": null,
-            "longitude": null,
-            "phone": null,
-            "fax": null,
-            "email": null,
-            "address_type": null,
-            "company_name": null
-        },
-        "items": [
-            {
-                "name": "Finca Flichman Estate Chardonnay - Viognier",
-                "sku": null,
-                "quantity": 1,
-                "grams": 7260,
-                "price": 5184000,
-                "vendor": "halfpipedev",
-                "requires_shipping": true,
-                "taxable": true,
-                "fulfillment_service": "manual",
-                "properties": {},
-                "product_id": 10244279435556,
-                "variant_id": 51304781873444
+    "data": {
+        "product": {
+            "largo": {
+                "value": "{\"value\":24.0,\"unit\":\"CENTIMETERS\"}"
+            },
+            "ancho": {
+                "value": "{\"value\":30.0,\"unit\":\"CENTIMETERS\"}"
+            },
+            "alto": {
+                "value": "{\"value\":16.0,\"unit\":\"CENTIMETERS\"}"
             }
-        ],
-        "currency": "ARS",
-        "locale": "en",
-        "order_totals": {
-            "subtotal_price": 5184000,
-            "total_price": 5184000,
-            "discount_amount": 0
-        },
-        "customer": {
-            "id": 23105261437220,
-            "tags": []
+        }
+    },
+    "extensions": {
+        "cost": {
+            "requestedQueryCost": 4,
+            "actualQueryCost": 4,
+            "throttleStatus": {
+                "maximumAvailable": 2000.0,
+                "currentlyAvailable": 1996,
+                "restoreRate": 100.0
+            }
         }
     }
 }

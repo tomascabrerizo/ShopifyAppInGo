@@ -347,3 +347,4 @@ func(app *Application) GetProductDimensions(shop, id string) (*DimensionCm, erro
 
 	return dim, nil
 }
+

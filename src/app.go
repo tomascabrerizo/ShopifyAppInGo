@@ -19,7 +19,9 @@ import (
 type Application struct {
 	db *database.Database
 	proxy *httputil.ReverseProxy
+	
 	shopify *shopify.Shopify
+
 	client *http.Client
 	
 	events chan Event
@@ -251,21 +253,22 @@ func (app *Application) CarrierServiceCallbackHandler(w http.ResponseWriter, r *
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	// TODO: Factor out volumen calculation
-	var totalVolumen float64 = 0
-	for _, item := range payload.Rate.Items {
-		productID := fmt.Sprintf("gid://shopify/Product/%d", item.ProductID)
-		// TODO: Cache products dims on application map
-		dim, err := app.GetProductDimensions(shop, productID)
-		if err != nil {
+	
+	items := make([]PackageItem, 0, len(payload.Rate.Items))
+	for _, it:= range payload.Rate.Items {
+		item := PackageItem{
+			ProductID: fmt.Sprintf("gid://shopify/Product/%d", it.ProductID),
+			Quantity: it.Quantity,
+		}
+		items = append(items, item)
+	}
+	
+	volumen, err := app.CalculatePackageVolumen(shop, items)
+	if err != nil {
 			log.Println(err.Error())
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
-		}
-		volumen := dim.Width * dim.Height * dim.Length
-		totalVolumen += volumen * float64(item.Quantity)
 	}
-
-	log.Printf("%f\n", totalVolumen)
+	
+	log.Printf("%f\n", volumen)
 }
