@@ -1,61 +1,66 @@
 package main
 
 import (
-	"os"
-	"log"
 	"fmt"
-	"time"
-	
+	"log"
+	"os"
+
 	"encoding/json"
 
-	"net/url"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 
+	"tomi/src/andreani"
 	"tomi/src/database"
 	"tomi/src/shopify"
 )
 
 type Application struct {
-	db *database.Database
+	db    *database.Database
 	proxy *httputil.ReverseProxy
-	
-	shopify *shopify.Shopify
 
-	client *http.Client
-	
-	events chan Event
+	shop string
+
+	shopApi *shopify.Api
+	andApi  *andreani.Api
+
+	events       chan Event
 	lastEventIds *EventIdSB
 }
 
-func NewAppication() (*Application, error){
+func NewAppication() (*Application, error) {
 	db, err := database.NewDatabase("./database/schema.sql")
-	if(err != nil) {
+	if err != nil {
 		return nil, err
 	}
 
 	target, err := url.Parse("http://localhost:5173")
-	if(err != nil) {
+	if err != nil {
 		return nil, err
 	}
 	proxy := httputil.NewSingleHostReverseProxy(target)
 
-	shopify := shopify.NewShop(
+	shopApi := shopify.NewApi(
 		os.Getenv("SHOPIFY_CLIENT_ID"),
-		os.Getenv("SHOPIFY_CLIENT_SECRET"), 
+		os.Getenv("SHOPIFY_CLIENT_SECRET"),
 	)
 
-	events := make(chan Event,  512)
-	
+	andApi := andreani.NewApi(
+		os.Getenv("ANDREANI_CLIENT_CODE"),
+		os.Getenv("ANDREANI_ACCESS_TOKEN"),
+	)
+
+	events := make(chan Event, 512)
+
 	app := &Application{
-		db: db,
-		proxy: proxy,
-		shopify: shopify,
-		events: events,
+		db:           db,
+		proxy:        proxy,
+		shop:         os.Getenv("SHOPIFY_SHOP_NAME"),
+		shopApi:      shopApi,
+		andApi:       andApi,
+		events:       events,
 		lastEventIds: NewEventIdSB(),
-		client: &http.Client{
-			Timeout: 10 * time.Second,
-		},
 	}
 
 	go app.ProcessEvents()
@@ -68,7 +73,7 @@ func (app *Application) Shutdown() {
 }
 
 func (app *Application) MainHandler(w http.ResponseWriter, r *http.Request) {
-	if err := app.shopify.Verify(r); err == nil {
+	if err := app.shopApi.Verify(r); err == nil {
 		_, err := app.db.GetAccessToken(r.URL.Query().Get("shop"))
 		if err != nil {
 			http.ServeFile(w, r, "./app_bridge/dist/index.html")
@@ -79,35 +84,35 @@ func (app *Application) MainHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) AuthHandler(w http.ResponseWriter, r *http.Request) {
-	if err := app.shopify.Verify(r); err != nil {
+	if err := app.shopApi.Verify(r); err != nil {
 		app.proxy.ServeHTTP(w, r)
 		return
 	}
 
 	shop := r.URL.Query().Get("shop")
 	// TODO: Generate random state and save it to a cookie
-	url := app.shopify.OAuthUrl(r.Host, shop, "123")
+	url := app.shopApi.OAuthUrl(r.Host, shop, "123")
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
 func (app *Application) AuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
-	if err := app.shopify.Verify(r); err != nil {
+	if err := app.shopApi.Verify(r); err != nil {
 		http.Error(w, "unauthorize request", http.StatusUnauthorized)
 		return
 	}
-	
+
 	shop := r.URL.Query().Get("shop")
 	code := r.URL.Query().Get("code")
 	host := r.URL.Query().Get("host")
 
-	tokenResp, err := app.shopify.OAuthRequestAccessToken(shop, code)
+	tokenResp, err := app.shopApi.OAuthRequestAccessToken(shop, code)
 	if err != nil {
 		log.Printf("fail to get access token: %s\n", err.Error())
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 	}
-	
+
 	token := database.AccessToken{
-		Shop: shop,
+		Shop:   shop,
 		Access: tokenResp.AccessToken,
 		Scopes: tokenResp.Scope,
 	}
@@ -117,7 +122,7 @@ func (app *Application) AuthCallbackHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	embeddedUrl, err := app.shopify.EmbeddedUrl(host) 
+	embeddedUrl, err := app.shopApi.EmbeddedUrl(host)
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -128,8 +133,7 @@ func (app *Application) AuthCallbackHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (app *Application) GetOrdersHandler(w http.ResponseWriter, r *http.Request) {
-	shop := os.Getenv("SHOPIFY_SHOP_NAME")
-	orders, err := app.db.GetUnfulfilledOrders(shop)
+	orders, err := app.db.GetUnfulfilledOrders(app.shop)
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -143,21 +147,27 @@ func (app *Application) GetOrdersHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (app *Application) CreateCarrierServiceHandler(w http.ResponseWriter, r *http.Request) {
-	shop := os.Getenv("SHOPIFY_SHOP_NAME")	
-	
+	token, err := app.db.GetAccessToken(app.shop)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
 	type Payload struct {
 		Name        string `json:"name"`
 		CallbackURL string `json:"callbackUrl"`
 	}
-	
+
 	var payload Payload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
-	carrierService, err := app.CarrierServiceCreate(
-		shop, 
+	carrierService, err := app.shopApi.CarrierServiceCreate(
+		app.shop,
+		token.Access,
 		payload.Name,
 		payload.CallbackURL,
 	)
@@ -175,9 +185,14 @@ func (app *Application) CreateCarrierServiceHandler(w http.ResponseWriter, r *ht
 }
 
 func (app *Application) GetCarrierServicesHandler(w http.ResponseWriter, r *http.Request) {
-	shop := os.Getenv("SHOPIFY_SHOP_NAME")
-	
-	services, err := app.GetCarrierServices(shop)
+	token, err := app.db.GetAccessToken(app.shop)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	services, err := app.shopApi.GetCarrierServices(app.shop, token.Access)
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -192,26 +207,33 @@ func (app *Application) GetCarrierServicesHandler(w http.ResponseWriter, r *http
 }
 
 func (app *Application) DeleteCarrierServicesHandler(w http.ResponseWriter, r *http.Request) {
-	shop := os.Getenv("SHOPIFY_SHOP_NAME")	
-	id :=  r.PathValue("serviceID")
+	token, err := app.db.GetAccessToken(app.shop)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	id := r.PathValue("serviceID")
 	if id == "" {
 		http.Error(w, "invalid id", http.StatusBadRequest)
-  	return
+		return
 	}
-	
+
 	unscaped, err := url.PathUnescape(id)
 	if err != nil {
-	    http.Error(w, "invalid id", http.StatusBadRequest)
-	    return
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
 	}
 
 	log.Println(unscaped)
 
-	carrierService, err := app.CarrierServiceDelete(
-		shop, 
+	carrierService, err := app.shopApi.CarrierServiceDelete(
+		app.shop,
+		token.Access,
 		unscaped,
 	)
-	
+
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -227,10 +249,8 @@ func (app *Application) DeleteCarrierServicesHandler(w http.ResponseWriter, r *h
 }
 
 func (app *Application) CarrierServiceCallbackHandler(w http.ResponseWriter, r *http.Request) {
-	shop := os.Getenv("SHOPIFY_SHOP_NAME")	
-
 	type Address struct {
-		Country     string `json:"country"`
+		Country    string `json:"country"`
 		PostalCode string `json:"postal_code"`
 	}
 
@@ -241,34 +261,34 @@ func (app *Application) CarrierServiceCallbackHandler(w http.ResponseWriter, r *
 		VariantID int64 `json:"variant_id"`
 	}
 
-	var payload struct{
+	var payload struct {
 		Rate struct {
 			Origin      Address `json:"origin"`
 			Destination Address `json:"destination"`
 			Items       []Item  `json:"items"`
-		} `json:"rate"` 
+		} `json:"rate"`
 	}
-	
+
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	
+
 	items := make([]PackageItem, 0, len(payload.Rate.Items))
-	for _, it:= range payload.Rate.Items {
+	for _, it := range payload.Rate.Items {
 		item := PackageItem{
 			ProductID: fmt.Sprintf("gid://shopify/Product/%d", it.ProductID),
-			Quantity: it.Quantity,
+			Quantity:  it.Quantity,
 		}
 		items = append(items, item)
 	}
-	
-	volumen, err := app.CalculatePackageVolumen(shop, items)
+
+	volumen, err := app.calculatePackageVolumen(app.shop, items)
 	if err != nil {
-			log.Println(err.Error())
-			http.Error(w, "internal server error", http.StatusInternalServerError)
-			return
+		log.Println(err.Error())
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
 	}
-	
+
 	log.Printf("%f\n", volumen)
 }
