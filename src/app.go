@@ -299,6 +299,7 @@ func (app *Application) CarrierServiceCallbackHandler(w http.ResponseWriter, r *
 		return
 	}
 
+	// TODO: These contracts needs to be loaded from database
 	contratoEntrega := "400017493"
 	zip := onlyDigits(payload.Rate.Destination.PostalCode)
 	volumenStr := strconv.FormatFloat(volumen, 'f', 2, 64)
@@ -309,6 +310,37 @@ func (app *Application) CarrierServiceCallbackHandler(w http.ResponseWriter, r *
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
+	
+	totalPrice, err := strconv.ParseFloat(rate.TarifaConIva.Total, 64)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
 
-	log.Printf("%v\n", rate)
+	type Rate struct {
+		ServiceName string `json:"service_name"`
+		ServiceCode string `json:"service_code"`
+		TotalPrice  string `json:"total_price"`
+		Description string `json:"description"`
+		Currency    string `json:"currency"`
+	}
+		
+	var result struct {
+		Rates []Rate `json:"rates"`
+	}
+
+	result.Rates = append(result.Rates, Rate{
+		ServiceName: "Andreani a domicilio",
+		ServiceCode: contratoEntrega,
+		TotalPrice: fmt.Sprintf("%d", int64(totalPrice * 100)),
+		Description: "envio directo a tu domicilio",
+		Currency: "ARS",
+	})
+	
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		log.Println("json encode error:", err.Error())
+	}
 }
