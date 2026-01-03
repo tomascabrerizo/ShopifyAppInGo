@@ -37,6 +37,22 @@ type Metafield struct {
 	Value string `json:"value"`
 }
 
+type Metric struct {
+	Value float64 `json:"value"`
+	Unit  string  `json:"unit"`
+}
+
+type SupportedAction struct {
+	Action string `json:"action"`
+}
+
+type Product struct {
+	Title *string    `json:"tilte"`
+	Largo *Metafield `json:"largo"`
+	Ancho *Metafield `json:"ancho"`
+	Alto  *Metafield `json:"alto"`
+}
+
 type UserError struct {
 	Field   []string `json:"field"`
 	Message string `json:"message"`
@@ -229,12 +245,7 @@ func parseDimension(m *Metafield) (float64, error) {
 		return 0, fmt.Errorf("invalid metafield\n")
 	}
 
-	type DimensionValue struct {
-		Value float64 `json:"value"`
-		Unit  string  `json:"unit"`
-	}
-
-	var dim DimensionValue 
+	var dim Metric 
 	err := json.Unmarshal([]byte(m.Value), &dim)
 	if err != nil {
 		return 0, err
@@ -307,11 +318,7 @@ func(api *Api) GetProductDimensions(shop, token, id string) (*DimensionCm, error
 
 	var graphql struct {
 		Data struct {
-			Product struct {
-				Largo *Metafield `json:"largo"`
-				Ancho *Metafield `json:"ancho"`
-				Alto  *Metafield `json:"alto"`
-			} `json:"product"`
+		Product Product `json:"product"`
 		} `json:"data"`
 	}
 	
@@ -341,5 +348,155 @@ func(api *Api) GetProductDimensions(shop, token, id string) (*DimensionCm, error
 	}
 
 	return dim, nil
+}
+
+type Address struct {
+	Address1     *string  `json:"address1"`
+	Address2     *string  `json:"address2"`
+	Phone        *string  `json:"phone"`
+	City         *string  `json:"city"`
+	Zip          *string  `json:"zip"`
+	Province     *string  `json:"province"`
+	Country      *string  `json:"country"`
+	ContryCode   *string  `json:"country_code"`
+	ProvinceCode *string  `json:"province_code"`
+}
+
+type LineItems struct {
+	Nodes []struct {
+		ID                string   `json:"id"`
+		TotalQuantity     int      `json:"totalQuantity"`
+		RemainingQuantity int      `json:"remainingQuantity"`
+		Weigth           	Metric   `json:"weight"` 
+		LineItem          struct {
+			Product struct {
+				ID    string `json:"id"`
+				Title string `json:"title"`
+			} `json:"product"`
+		}                          `json:"lineItem"`
+	} `json:"nodes"`
+}
+
+type AssignedLocation struct {
+	Location struct {
+		ID      string  `json:"id"`
+		Name    string  `json:"name"`
+		Address Address `json:"address"`
+	} `json:"location"`
+}
+
+type FulfillmentOrders struct {
+	Nodes []struct {
+		ID               string   				 `json:"id"`
+		Status           string   				 `json:"status"`
+		SupportedActions []SupportedAction `json:"supportedActions"`
+		AssignedLocation AssignedLocation  `json:"assignedLocation"` 
+		LineItems LineItems 							 `json:"lineItems"`
+	} `json:"nodes"`
+}
+
+func (api *Api) GetFulfillments(shop, token, orderID string) (*FulfillmentOrders, error) {
+
+	type GraphQLVariables struct {
+		OrderID string `json:"orderID"`
+	}
+
+	type GraphQLPayload struct {
+		Query     string           `json:"query"`
+		Variables GraphQLVariables `json:"variables"`
+	}
+
+	query := `
+		query ($orderID: ID!) {
+		  order(id: $orderID) {
+		    fulfillmentOrders(first: 64, query: "status:OPEN") {
+		      nodes {
+		        id
+		        status
+		        supportedActions {
+		          action
+		        }
+        		assignedLocation {
+        		  location {
+        		    id
+        		    name
+        		    address {
+        		      address1
+        		      address2
+        		      city
+        		      province
+        		      provinceCode
+        		      zip
+        		      country
+        		      countryCode
+        		    }
+        		  }
+        		}
+		        lineItems(first: 64) {
+		          nodes {
+		            id
+            		totalQuantity
+            		remainingQuantity
+                weight {
+                	unit
+                	value
+                }
+								lineItem {
+									product {
+										id
+										title
+									}
+								}
+		          }
+		        }
+		      }
+		    }
+		  }
+		}
+	`
+
+	payload := GraphQLPayload{
+		Query: query, 
+		Variables: GraphQLVariables{
+			OrderID: orderID,
+		},
+	}
+
+	body, err := json.Marshal(&payload)
+	if err != nil {
+		return nil, err
+	}
+
+	url := "https://"+shop+"/admin/api/2025-10/graphql.json" 
+	req, err := http.NewRequest("POST", url, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type",  "application/json")
+	req.Header.Set("X-Shopify-Access-Token", token)
+	
+	resp, err := api.client.Do(req)
+  if err != nil {
+		return nil, err
+  }
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("shopify get dimensions failed")
+	}
+
+	var graphql struct {
+		Data struct {
+			Order struct {
+				FulfillmentOrders FulfillmentOrders `json:"fulfillmentOrders"`
+			} `json:"order"`
+		} `json:"data"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&graphql); err != nil {
+		return nil, err
+	}
+
+	return &graphql.Data.Order.FulfillmentOrders, nil
 }
 

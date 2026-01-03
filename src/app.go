@@ -141,9 +141,44 @@ func (app *Application) GetOrdersHandler(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(orders); err != nil {
+		log.Println("json encode error:", err.Error())
+	}
+}
+
+func (app *Application) GetOrderFulfillmentsHandler(w http.ResponseWriter, r *http.Request) {
+	token, err := app.db.GetAccessToken(app.shop)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	
+	id := r.PathValue("orderID")
+	if id == "" {
+		http.Error(w, "missing orderID", http.StatusBadRequest)
+		return
+	}
+
+	unscaped, err := url.PathUnescape(id)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+
+	fulfillments, err := app.shopApi.GetFulfillments(app.shop, token.Access, unscaped)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(fulfillments); err != nil {
 		log.Println("json encode error:", err.Error())
 	}
 }

@@ -457,10 +457,52 @@ func (db *Database) OrderWasDeleted(orderID int64) bool {
 	return true 
 }
 
+func (db *Database) GetOrderItems(orderID int64) ([]OrderItem, error) {
+	query := `
+		SELECT
+			i.item_id, item_api_id, i.order_id, i.name,
+			i.grams, i.quantity, i.currency, i.price,
+			i.product_id, i.variant_id, i.sku 
+		FROM order_items i
+		WHERE i.order_id = ?;
+	`
+
+	rows, err := db.handle.Query(query, orderID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := []OrderItem{}
+
+	for rows.Next() {
+		item := OrderItem{}
+		if err := rows.Scan(
+			&item.ItemID,
+			&item.ItemApiID,
+			&item.OrderID,
+			&item.Name,
+			&item.Grams,
+			&item.Quantity,
+			&item.Currency,
+			&item.Price,
+			&item.ProductID,
+			&item.VariantID,
+			&item.Sku,
+		); err != nil {
+			return nil, err
+		}
+
+		items = append(items, item)
+	}
+
+	return items, nil
+}
+
 func (db *Database) GetUnfulfilledOrders(shop string) ([]Order, error) {
 	query := `
 		SELECT 
-			o.order_id, o.shop, o.currency,
+			o.order_id, o.order_api_id, o.shop, o.currency,
 			o.subtotal_price, o.shipping_price, o.discount, o.total_price,
 			o.carrier_name, o.carrier_code, o.carrier_price,
 			o.cancelled, o.paid, o.fulfilled,
@@ -472,7 +514,8 @@ func (db *Database) GetUnfulfilledOrders(shop string) ([]Order, error) {
 		JOIN addresses AS a ON o.order_id = a.order_id
 		WHERE 
 			shop = ?
-			AND fulfilled = FALSE;
+			AND fulfilled = FALSE
+		ORDER BY o.created_at DESC;
 	`
 	
 	rows, err := db.handle.Query(query, shop)
@@ -488,6 +531,7 @@ func (db *Database) GetUnfulfilledOrders(shop string) ([]Order, error) {
 		order.ShippingAddress = &Address{} 
 		if err := rows.Scan(
 			&order.OrderID,
+			&order.OrderApiID,
 			&order.Shop,
 			&order.Currency,
 			&order.SubtotalPrice,
@@ -515,6 +559,11 @@ func (db *Database) GetUnfulfilledOrders(shop string) ([]Order, error) {
 			&order.ShippingAddress.Province,
 			&order.ShippingAddress.Country,
 		); err != nil {
+			return nil, err
+		}
+
+		order.Items, err = db.GetOrderItems(order.OrderID)
+		if err != nil {
 			return nil, err
 		}
 

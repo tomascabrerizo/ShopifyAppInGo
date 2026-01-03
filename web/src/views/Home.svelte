@@ -1,24 +1,13 @@
 <script>
-    import { onMount, getContext } from "svelte";
+    import { getContext } from "svelte";
+    import { view } from "../stores/views";
+    import { orders } from "../stores/orders";
+    import { utils } from "../utils";
 
     const shopify = getContext("shopify");
-    let orders = $state([]);
-
-    onMount(() => {
-        (async () => {
-            try {
-                const res = await shopify.fetch("/api/orders");
-                const data = await res.json();
-                orders = data;
-            } catch (e) {
-                console.error("failed to get oreders:", e);
-            }
-        })();
-    });
 </script>
 
-<h1>Home</h1>
-<s-page heading="Pedidos" inlineSize="large">
+<s-section heading="Pedidos" padding="base">
     <s-table>
         <s-table-header-row>
             <s-table-header listSlot="primary">Pedido</s-table-header>
@@ -33,9 +22,10 @@
             >
         </s-table-header-row>
         <s-table-body>
-            {#each orders as order}
+            {#each $orders as order}
                 <s-table-row key={order.order_id}>
                     <s-table-cell>
+                        <!-- svelte-ignore a11y_no_static_element_interactions -->
                         <s-stack
                             direction="inline"
                             gap="small"
@@ -43,7 +33,13 @@
                         >
                             <s-checkbox checked={false} id={order.order_id}
                             ></s-checkbox>
-                            <s-text type="strong">{order.order_id}</s-text>
+                            <!-- svelte-ignore a11y_click_events_have_key_events -->
+                            <s-link
+                                onclick={(e) => {
+                                    e.preventDefault();
+                                    view.order(order.order_id);
+                                }}>{order.order_id}</s-link
+                            >
                         </s-stack>
                     </s-table-cell>
 
@@ -66,14 +62,10 @@
                     </s-table-cell>
 
                     <s-table-cell
-                        >{new Intl.NumberFormat("es-AR", {
-                            style: "currency",
-                            currency: "ARS",
-                            minimumFractionDigits: 2,
-                        }).format(order.total_price / 100)}</s-table-cell
+                        >{utils.formatPrice(order.total_price)}</s-table-cell
                     >
                 </s-table-row>
             {/each}
         </s-table-body>
     </s-table>
-</s-page>
+</s-section>

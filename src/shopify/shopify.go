@@ -1,6 +1,7 @@
 package shopify
 
 import (
+	"os"
 	"time"
 	"sort"
 	"bytes"
@@ -51,7 +52,7 @@ type MoneyBag struct {
 
 type ShippingLine struct {
 	CarrierIdentifier         *string  `json:"carrier_identifier"`
-	Code                      *string  `json:"string"`
+	Code                      *string  `json:"code"`
 	Custom                    bool     `json:"custom"`
 	Title                     string   `json:"title"`
 	Source                    *string  `json:"source"`
@@ -123,11 +124,17 @@ func (o *Order) ToDatabaseOrder(shop string) database.Order {
 	var carrierName  *string = nil
 	var carrierCode  *string = nil
 	var carrierPrice int64  = 0 
-	if(len(o.ShippingLines) > 0) {
-		shippingLine := o.ShippingLines[0] 
-		carrierName = &shippingLine.Title
-		carrierCode = shippingLine.Code
-		carrierPrice = getShopMoney(shippingLine.PriceSet)
+	
+	for _, line := range o.ShippingLines {
+		if line.Source == nil || line.Code == nil {
+			continue
+		}
+
+		if *line.Source == os.Getenv("ANDREANI_CARRIER_NAME") {
+			carrierName = line.Source
+			carrierCode = line.Code
+			carrierPrice = getShopMoney(line.PriceSet)
+		}
 	}
 	
 	var address *database.Address = nil

@@ -1,6 +1,8 @@
 <script>
-  import { setContext } from "svelte";
+  import { onMount, setContext } from "svelte";
   import { view, VIEW_HOME, VIEW_SETTINGS, VIEW_ORDER } from "./stores/views";
+  import { orders } from "./stores/orders";
+
   import Home from "./views/Home.svelte";
   import Order from "./views/Order.svelte";
   import Settings from "./views/Settings.svelte";
@@ -14,28 +16,40 @@
     host: urlParams.get("host"),
     forceRedirect: true,
   });
-  setContext("shopify", {
+
+  const shopify = {
     app: app,
     fetch: authenticatedFetch(app),
+  };
+  setContext("shopify", shopify);
+
+  onMount(() => {
+    (async () => {
+      try {
+        const res = await shopify.fetch("/api/orders");
+        orders.set(await res.json());
+      } catch (e) {
+        console.error("failed to fetch orders:", e);
+      }
+    })();
   });
 </script>
 
 <main>
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <s-button onclick={() => view.home()}> home </s-button>
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <s-button onclick={() => view.settings()}> settings </s-button>
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <s-button onclick={() => view.order(0)}> order </s-button>
+  <s-page heading="Flichman" inlineSize="large">
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <s-button onclick={() => view.home()}> home </s-button>
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <s-button onclick={() => view.settings()}> settings </s-button>
 
-  {#if $view.name === VIEW_HOME}
-    <Home />
-  {:else if $view.name === VIEW_SETTINGS}
-    <Settings />
-  {:else if $view.name === VIEW_ORDER}
-    <Order />
-  {/if}
+    {#if $view.name === VIEW_HOME}
+      <Home />
+    {:else if $view.name === VIEW_SETTINGS}
+      <Settings />
+    {:else if $view.name === VIEW_ORDER}
+      <Order />
+    {/if}
+  </s-page>
 </main>

@@ -1,24 +1,74 @@
 {
     "data": {
-        "product": {
-            "largo": {
-                "value": "{\"value\":24.0,\"unit\":\"CENTIMETERS\"}"
-            },
-            "ancho": {
-                "value": "{\"value\":30.0,\"unit\":\"CENTIMETERS\"}"
-            },
-            "alto": {
-                "value": "{\"value\":16.0,\"unit\":\"CENTIMETERS\"}"
+        "order": {
+            "fulfillmentOrders": {
+                "nodes": [
+                    {
+                        "id": "gid://shopify/FulfillmentOrder/11259368603940",
+                        "status": "OPEN",
+                        "supportedActions": [
+                            {
+                                "action": "CREATE_FULFILLMENT"
+                            },
+                            {
+                                "action": "HOLD"
+                            }
+                        ],
+                        "assignedLocation": {
+                            "location": {
+                                "id": "gid://shopify/Location/107579015460",
+                                "name": "Shop location",
+                                "address": {
+                                    "address1": "Munives 800",
+                                    "address2": "Finca Flichman",
+                                    "city": "Maipu",
+                                    "province": "Mendoza",
+                                    "provinceCode": "M",
+                                    "zip": "M5517",
+                                    "country": "Argentina",
+                                    "countryCode": "AR"
+                                }
+                            }
+                        },
+                        "lineItems": {
+                            "nodes": [
+                                {
+                                    "id": "gid://shopify/FulfillmentOrderLineItem/32418761638180",
+                                    "totalQuantity": 1,
+                                    "remainingQuantity": 1,
+                                    "weight": {
+                                        "unit": "KILOGRAMS",
+                                        "value": 7.7
+                                    },
+                                    "lineItem": {
+                                        "product": {
+                                            "title": "Dedicado Chardonnay",
+                                            "largo": {
+                                                "value": "{\"value\":92.4,\"unit\":\"CENTIMETERS\"}"
+                                            },
+                                            "ancho": {
+                                                "value": "{\"value\":10.1,\"unit\":\"CENTIMETERS\"}"
+                                            },
+                                            "alto": {
+                                                "value": "{\"value\":103.3,\"unit\":\"CENTIMETERS\"}"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
             }
         }
     },
     "extensions": {
         "cost": {
-            "requestedQueryCost": 4,
-            "actualQueryCost": 4,
+            "requestedQueryCost": 435,
+            "actualQueryCost": 5,
             "throttleStatus": {
                 "maximumAvailable": 2000.0,
-                "currentlyAvailable": 1996,
+                "currentlyAvailable": 1995,
                 "restoreRate": 100.0
             }
         }

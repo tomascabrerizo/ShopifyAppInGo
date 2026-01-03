@@ -76,8 +76,6 @@
     }
 </script>
 
-<h1>Settings</h1>
-
 <s-section heading="Carrier service" padding="base">
     <s-table>
         <s-table-header-row>

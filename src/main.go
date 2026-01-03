@@ -138,6 +138,11 @@ func main() {
 	)
 
 	http.Handle(
+		"GET /api/orders/{orderID}/fulfillments",
+		shopifyAuth(http.HandlerFunc(app.GetOrderFulfillmentsHandler)),
+	)
+
+	http.Handle(
 		"POST /api/carrier-service",
 		shopifyAuth(http.HandlerFunc(app.CreateCarrierServiceHandler)),
 	)

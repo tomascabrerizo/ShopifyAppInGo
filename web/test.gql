@@ -1,13 +1,20 @@
-query ProductMetafields($ownerId: ID!) { 
-    product(id: $ownerId) {
-        largo: metafield(namespace: "custom", key: "largo") {
-          value
+query {
+  order(id: $orderID) {
+    fulfillmentOrders(first: 64, query: "status:OPEN") {
+      nodes {
+        id
+        status
+        supportedActions {
+          action
         }
-        ancho: metafield(namespace: "custom", key: "ancho") {
-          value
+        lineItems(first: 64) {
+          nodes {
+            id
+            quantity
+          }
         }
-        alto: metafield(namespace: "custom", key: "alto") {
-          value
-        }
+      }
     }
+  }
 }
+
