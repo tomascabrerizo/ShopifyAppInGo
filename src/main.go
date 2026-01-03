@@ -9,9 +9,13 @@ import (
 
 	"net/url"
 	"net/http"
-	
+		
 	"github.com/joho/godotenv"
 	"github.com/golang-jwt/jwt/v5"
+	
+
+	// TODO: Remove from main.go
+	"tomi/src/andreani"
 )
 
 func cors(next http.Handler) http.Handler {
@@ -122,6 +126,54 @@ func main() {
 	}
 	defer app.Shutdown()
 	
+	
+	/////////////////////////////////////////////////////////
+	// Create shipping test
+	/////////////////////////////////////////////////////////
+	
+	orig := andreani.Postal {
+		CodigoPostal: "5517",
+		Calle: "Munives 800",
+		Numero: "800",
+		Localidad: "Maipu",
+	}
+
+	dest := andreani.Postal {
+		CodigoPostal: "5521",
+		Calle: "Estrada 2200",
+		Numero: "2200",
+		Localidad: "Guaymallen",
+	}
+
+	remitente := andreani.Persona {
+		NombreCompleto: "Finca Flichman",
+	}
+
+	destinatario := andreani.Persona {
+		NombreCompleto: "Tomas Cabrerizo",
+	}
+
+	bultos := []andreani.Bulto{
+		{
+			Kilos: 1.5,
+			VolumenCm: 1000,
+		},
+	}
+	
+	if err := app.andApi.CreateShipping(
+		"400017493",
+		orig,
+		dest,
+		remitente,
+		destinatario,
+		bultos,
+	); err != nil {
+		log.Fatal(err.Error())
+	}
+
+	return
+	/////////////////////////////////////////////////////////
+
 	http.HandleFunc("/webhooks/app-uninstalled", app.AppUninstalledWebHook)
 	http.HandleFunc("/webhooks/orders", app.OrdersWebhook)
 

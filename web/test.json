@@ -1,76 +1,34 @@
 {
-    "data": {
-        "order": {
-            "fulfillmentOrders": {
-                "nodes": [
-                    {
-                        "id": "gid://shopify/FulfillmentOrder/11259368603940",
-                        "status": "OPEN",
-                        "supportedActions": [
-                            {
-                                "action": "CREATE_FULFILLMENT"
-                            },
-                            {
-                                "action": "HOLD"
-                            }
-                        ],
-                        "assignedLocation": {
-                            "location": {
-                                "id": "gid://shopify/Location/107579015460",
-                                "name": "Shop location",
-                                "address": {
-                                    "address1": "Munives 800",
-                                    "address2": "Finca Flichman",
-                                    "city": "Maipu",
-                                    "province": "Mendoza",
-                                    "provinceCode": "M",
-                                    "zip": "M5517",
-                                    "country": "Argentina",
-                                    "countryCode": "AR"
-                                }
-                            }
-                        },
-                        "lineItems": {
-                            "nodes": [
-                                {
-                                    "id": "gid://shopify/FulfillmentOrderLineItem/32418761638180",
-                                    "totalQuantity": 1,
-                                    "remainingQuantity": 1,
-                                    "weight": {
-                                        "unit": "KILOGRAMS",
-                                        "value": 7.7
-                                    },
-                                    "lineItem": {
-                                        "product": {
-                                            "title": "Dedicado Chardonnay",
-                                            "largo": {
-                                                "value": "{\"value\":92.4,\"unit\":\"CENTIMETERS\"}"
-                                            },
-                                            "ancho": {
-                                                "value": "{\"value\":10.1,\"unit\":\"CENTIMETERS\"}"
-                                            },
-                                            "alto": {
-                                                "value": "{\"value\":103.3,\"unit\":\"CENTIMETERS\"}"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                ]
-            }
-        }
+    "estado": "Pendiente",
+    "tipo": "B2C",
+    "sucursalDeDistribucion": {
+        "nomenclatura": "MDZ",
+        "descripcion": "MENDOZA (AV SAN MARTIN)",
+        "id": "37"
     },
-    "extensions": {
-        "cost": {
-            "requestedQueryCost": 435,
-            "actualQueryCost": 5,
-            "throttleStatus": {
-                "maximumAvailable": 2000.0,
-                "currentlyAvailable": 1995,
-                "restoreRate": 100.0
-            }
+    "sucursalDeRendicion": {
+        "nomenclatura": "PSD",
+        "descripcion": "PROCESAMIENTO CIT POSTAL",
+        "id": "1"
+    },
+    "sucursalDeImposicion": {},
+    "sucursalAbastecedora": {},
+    "fechaCreacion": "2026-01-03T18:46:53-03:00",
+    "numeroDePermisionaria": "RNPSP N\u00BA 586",
+    "descripcionServicio": "Encomienda eCommerce",
+    "bultos": [
+        {
+            "numeroDeBulto": "1",
+            "numeroDeEnvio": "360000101982809",
+            "totalizador": "1/1",
+            "linking": [
+                {
+                    "meta": "Etiqueta",
+                    "contenido": "https://apisqa.andreani.com/v2/ordenes-de-envio/API0000000477977/etiquetas?bulto=1"
+                }
+            ]
         }
-    }
+    ],
+    "agrupadorDeBultos": "API0000000477977",
+    "etiquetasPorAgrupador": "https://apisqa.andreani.com/v2/ordenes-de-envio/API0000000477977/etiquetas"
 }
