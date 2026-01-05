@@ -295,6 +295,7 @@ func (app *Application) CarrierServiceCallbackHandler(w http.ResponseWriter, r *
 
 	type Address struct {
 		Country    string `json:"country"`
+		Province   string `json:"province"`
 		PostalCode string `json:"postal_code"`
 	}
 

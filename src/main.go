@@ -13,7 +13,6 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/golang-jwt/jwt/v5"
 	
-
 	// TODO: Remove from main.go
 	"tomi/src/andreani"
 )
@@ -128,50 +127,23 @@ func main() {
 	
 	
 	/////////////////////////////////////////////////////////
-	// Create shipping test
+	// Localidad test 
 	/////////////////////////////////////////////////////////
 	
-	orig := andreani.Postal {
-		CodigoPostal: "5517",
-		Calle: "Munives 800",
-		Numero: "800",
-		Localidad: "Maipu",
-	}
-
-	dest := andreani.Postal {
-		CodigoPostal: "5521",
-		Calle: "Estrada 2200",
-		Numero: "2200",
-		Localidad: "Guaymallen",
-	}
-
-	remitente := andreani.Persona {
-		NombreCompleto: "Finca Flichman",
-	}
-
-	destinatario := andreani.Persona {
-		NombreCompleto: "Tomas Cabrerizo",
-	}
-
-	bultos := []andreani.Bulto{
-		{
-			Kilos: 1.5,
-			VolumenCm: 1000,
-		},
-	}
+	locations, err := app.andApi.GetLocations(andreani.LocationQuery{
+		Province: "mendoza",
+		Location: "guaymallen",
+		Zips: []string{"5521"},
+	})
 	
-	if err := app.andApi.CreateShipping(
-		"400017493",
-		orig,
-		dest,
-		remitente,
-		destinatario,
-		bultos,
-	); err != nil {
+	if err != nil {
 		log.Fatal(err.Error())
 	}
+	
+	for _, location := range locations {
+		log.Printf("%v\n", location)
+	}
 
-	return
 	/////////////////////////////////////////////////////////
 
 	http.HandleFunc("/webhooks/app-uninstalled", app.AppUninstalledWebHook)
