@@ -9,12 +9,9 @@ import (
 
 	"net/url"
 	"net/http"
-		
+	
 	"github.com/joho/godotenv"
 	"github.com/golang-jwt/jwt/v5"
-	
-	// TODO: Remove from main.go
-	"tomi/src/andreani"
 )
 
 func cors(next http.Handler) http.Handler {
@@ -125,27 +122,6 @@ func main() {
 	}
 	defer app.Shutdown()
 	
-	
-	/////////////////////////////////////////////////////////
-	// Localidad test 
-	/////////////////////////////////////////////////////////
-	
-	locations, err := app.andApi.GetLocations(andreani.LocationQuery{
-		Province: "mendoza",
-		Location: "guaymallen",
-		Zips: []string{"5521"},
-	})
-	
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	
-	for _, location := range locations {
-		log.Printf("%v\n", location)
-	}
-
-	/////////////////////////////////////////////////////////
-
 	http.HandleFunc("/webhooks/app-uninstalled", app.AppUninstalledWebHook)
 	http.HandleFunc("/webhooks/orders", app.OrdersWebhook)
 

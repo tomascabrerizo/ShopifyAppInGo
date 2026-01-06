@@ -117,6 +117,22 @@ type Order struct {
 	Items             []OrderItem `json:"items"`
 }
 
+type Package struct {
+	Number         string `json:"number"`
+	ShippingNumber string `json:"shipping_number"`
+	Label          string `json:"label"`
+}
+
+type Shipping struct {
+	ShippingID         int64     `json:"shipping_id,omitempty"`
+	OrderID            int64     `json:"order_id,omitempty"`
+	State              string    `json:"state"`
+	Type               string    `json:"type"`
+	PackageGroup       string    `json:"package_group"`
+	PackageGroupLabels string    `json:"package_group_labels"`
+	Packages           []Package `json:"packages,omitempty"`
+}
+
 func InsertAddressTx(tx *sql.Tx, address *Address) error {
 	query := `
 		INSERT INTO addresses (
@@ -571,4 +587,85 @@ func (db *Database) GetUnfulfilledOrders(shop string) ([]Order, error) {
 	}
 
 	return orders, nil
+}
+
+func InsertShippingTx(tx *sql.Tx, shipping *Shipping) error {
+	query := `
+		INSERT INTO shippings (
+			order_id,
+			state,
+			type,
+			package_group,
+			package_group_labels
+		) VALUES (?, ?, ?, ?, ?);
+	`
+
+	res, err := tx.Exec(
+		query,
+		shipping.ShippingID,
+		shipping.OrderID,
+		shipping.State,
+		shipping.Type,
+		shipping.PackageGroup,
+		shipping.PackageGroupLabels,
+	)
+
+	if err != nil {
+		return err
+	}
+	
+	id, err := res.LastInsertId()
+	if err != nil {
+		return err
+	}
+	
+	shipping.ShippingID = id
+
+	return nil
+}
+
+func InsertPackageTx(tx *sql.Tx, pkg *Package, shippingID int64) error {
+	query := `
+		INSERT INTO packages (
+			shipping_id,
+			"number",
+			shipping_number,
+			label
+		) VALUES (?, ?, ?, ?);
+	`
+
+	_, err := tx.Exec(
+		query,
+		shippingID,
+		pkg.Number,
+		pkg.ShippingNumber,
+		pkg.Label,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func InsertShipping(db *sql.DB, shipping *Shipping) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	if err := InsertShippingTx(tx, shipping); err != nil {
+		return err
+	}
+
+	for i := range shipping.Packages {
+		if err := InsertPackageTx(tx, &shipping.Packages[i], shipping.ShippingID); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }

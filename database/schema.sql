@@ -74,3 +74,23 @@ CREATE TABLE IF NOT EXISTS order_items (
 
   FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS shippings (
+  shipping_id INTEGER PRIMARY KEY,
+  order_id INTEGER NOT NULL,
+  state TEXT NOT NULL,
+  type TEXT NOT NULL,
+  package_group TEXT NOT NULL,
+  package_group_labels TEXT NOT NULL,
+  
+  FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS packages (
+  shipping_id INTEGER NOT NULL, 
+  "number" TEXT NOT NULL,
+  shipping_number TEXT NOT NULL,
+  label TEXT NOT NULL,
+
+  FOREIGN KEY (shipping_id) REFERENCES shippings(shipping_id) ON DELETE CASCADE
+);

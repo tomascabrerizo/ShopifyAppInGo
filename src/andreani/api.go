@@ -109,6 +109,38 @@ type Bulto struct {
 }
 
 
+type OrderSucursal struct {
+	Nomenclatura string `json:"nomenclatura"`
+	Descripcion  string `json:"descripcion"`
+	ID           string `json:"id"`
+}
+
+type OrderLinking struct {
+	Meta      string `json:"meta"`
+	Contenido string `json:"contenido"`
+}
+
+type OrderBulto struct {
+	NumeroDeBulto string    `json:"numeroDeBulto"`
+	NumeroDeEnvio string    `json:"numeroDeEnvio"`
+	Totalizador   string    `json:"totalizador"`
+	Linking       []OrderLinking `json:"linking"`
+}
+
+type Order struct {
+	Estado                  string        `json:"estado"`
+	Tipo                    string        `json:"tipo"`
+	SucursalDeDistribucion  OrderSucursal `json:"sucursalDeDistribucion"`
+	SucursalDeRendicion     OrderSucursal `json:"sucursalDeRendicion"`
+	SucursalDeImposicion    OrderSucursal `json:"sucursalDeImposicion"`
+	SucursalAbastecedora    OrderSucursal `json:"sucursalAbastecedora"`
+	FechaCreacion           string        `json:"fechaCreacion"`
+	NumeroDePermisionaria   string        `json:"numeroDePermisionaria"`
+	DescripcionServicio     string        `json:"descripcionServicio"`
+	Bultos                  []OrderBulto  `json:"bultos"`
+	AgrupadorDeBultos       string        `json:"agrupadorDeBultos"`
+	EtiquetasPorAgrupador   string        `json:"etiquetasPorAgrupador"`
+}
 
 type LocationQuery struct {
 	Location string
@@ -164,7 +196,7 @@ func (api *Api) GetLocations(query LocationQuery) ([]Location, error) {
 	return locations, nil
 }
 
-type SucursalQuery struct {
+type OfficeQuery struct {
 	Codigo string
 	Sucursal string
 	Region string
@@ -174,9 +206,9 @@ type SucursalQuery struct {
 	Numero string
 }
 
-func (api *Api) GetOffices(query SucursalQuery) ([]Office, error) {
+func (api *Api) GetOffices(query OfficeQuery) ([]Office, error) {
 
-	baseUrl, err := url.Parse(fmt.Sprintf("%s/v2/localidades", api.baseUrl))
+	baseUrl, err := url.Parse(fmt.Sprintf("%s/v2/sucursales", api.baseUrl))
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +257,7 @@ func (api *Api) GetOffices(query SucursalQuery) ([]Office, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("fail to get location")
+		return nil, errors.New("fail to get offices")
 	}
 
 	offices := []Office{}
@@ -269,7 +301,7 @@ func (api *Api) CreateShipping(
 	contrato string,
 	origen, destino Postal,
 	remitente, destinatario Persona,
-	bultos []Bulto) error {
+	bultos []Bulto) (*Order, error) {
 	
 	type Origen struct {
 		Postal Postal `json:"postal"`
@@ -301,32 +333,37 @@ func (api *Api) CreateShipping(
 
 	body, err := json.Marshal(&payload)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	
 	req, err := http.NewRequest("POST", url, bytes.NewReader(body))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req.Header.Set("Content-Type",  "application/json")
 	req.Header.Set("x-authorization-token", api.token)
 	
 	resp, err := api.client.Do(req)
   if err != nil {
-		return err
+		return nil, err
   }
 	defer resp.Body.Close()
 
 	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	
 	fmt.Println(string(bytes))
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return errors.New("shopify create shipping failed")
+		return nil, errors.New("shopify create shipping failed")
+	}
+	
+	order := &Order{}
+	if err := json.NewDecoder(resp.Body).Decode(order); err != nil {
+		return nil, err
 	}
 
-	return nil
+	return order, nil
 }

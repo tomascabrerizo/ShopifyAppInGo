@@ -336,6 +336,7 @@ func (app *Application) CarrierServiceCallbackHandler(w http.ResponseWriter, r *
 	}
 
 	// TODO: These contracts needs to be loaded from database
+	// TODO: Sucursal de origen si los packetes son depositados para ser enviados
 	contratoEntrega := "400017493"
 	zip := onlyDigits(payload.Rate.Destination.PostalCode)
 	volumenStr := strconv.FormatFloat(volumen, 'f', 2, 64)
